@@ -91,7 +91,7 @@
           <p class="lead">Jij kiest hoeveel en hoe vaak. Wij doen de rest — en zorgen dat je elke maand iets nieuws proeft.</p>
         </div>
         <ol class="steps reveal">
-          <li class="step"><h3>Kies je zak</h3><p>250 of 500 gram, 1× of 2× per maand. Hele bonen of gemalen voor jouw zetmethode.</p></li>
+          <li class="step"><h3>Kies je zak</h3><p>250 of 500 gram, 1× of 2× per maand. Altijd hele bonen, voor de meest verse kop.</p></li>
           <li class="step"><h3>Wij selecteren</h3><p>Elke maand bonen van een andere kleinschalige boer of coöperatie. Nooit een herhaling.</p></li>
           <li class="step"><h3>Vers in je brievenbus</h3><p>We branden in kleine oplages en versturen kort na het branden, in zakken die door de brievenbus passen.</p></li>
           <li class="step"><h3>Proef &amp; beoordeel</h3><p>Geef je bonen een score in je account. Zo wordt elke volgende verrassing nog beter.</p></li>
@@ -219,14 +219,19 @@
               </fieldset>
 
               <fieldset class="config-step">
-                <legend><span class="num">03</span> Bonen of gemalen?</legend>
-                <p class="hint">Tip: hele bonen blijven het langst vers. Geen molen? Wij malen voor je zetmethode.</p>
-                <div class="options options--5">
-                  <label class="option"><input type="radio" name="grind" value="bonen" checked><span class="card"><span class="title small">Hele bonen</span><span class="sub">Zelf malen</span></span></label>
-                  <label class="option"><input type="radio" name="grind" value="espresso"><span class="card"><span class="title small">Espresso</span><span class="sub">Heel fijn</span></span></label>
-                  <label class="option"><input type="radio" name="grind" value="filter"><span class="card"><span class="title small">Filter / V60</span><span class="sub">Medium</span></span></label>
-                  <label class="option"><input type="radio" name="grind" value="frenchpress"><span class="card"><span class="title small">French press</span><span class="sub">Grof</span></span></label>
-                  <label class="option"><input type="radio" name="grind" value="mokapot"><span class="card"><span class="title small">Mokapot</span><span class="sub">Fijn</span></span></label>
+                <legend><span class="num">03</span> Altijd hele bonen</legend>
+                <div class="beans-only">
+                  <div class="beans-only__icon" aria-hidden="true"><img src="assets/img/zwartwerk-boon.png" alt=""></div>
+                  <div>
+                    <strong>Wij versturen uitsluitend hele bonen</strong>
+                    <p>Hele bonen blijven het langst vers. Gemalen koffie verliest binnen een paar dagen een groot deel van zijn aroma, en kwaliteit staat bij ons voorop. Daarom malen we niet voor je: jij maalt vlak voor het zetten, en proeft zo precies wat de boer en de brander bedoeld hebben.</p>
+                    <ul class="grind-guide" aria-label="Maalgrofheid per zetmethode">
+                      <li><span>Espresso</span>heel fijn</li>
+                      <li><span>Mokapot</span>fijn</li>
+                      <li><span>Filter / V60</span>medium</li>
+                      <li><span>French press</span>grof</li>
+                    </ul>
+                  </div>
                 </div>
               </fieldset>
 
@@ -267,8 +272,8 @@
                     <p>Je betaalt je eerste levering veilig met iDEAL | Wero. Daarmee geef je ook een machtiging, zodat we volgende leveringen automatisch afschrijven rond de verzenddatum. Een afschrijving kun je altijd binnen 8 weken via je bank laten terugboeken.</p>
                   </div>
                 </div>
-                <div class="field" style="margin-top:20px"><label class="checkbox"><input type="checkbox" name="newsletter" checked> Stuur me het verhaal achter elke nieuwe batch per mail</label></div>
-                <div class="field" style="margin-top:10px"><label class="checkbox"><input type="checkbox" name="terms" data-validate="required"> Ik ga akkoord met de <a href="algemene-voorwaarden.html" target="_blank">algemene voorwaarden</a> en heb het <a href="privacy.html" target="_blank">privacybeleid</a> gelezen</label><span class="err">Even akkoord geven, dan kunnen we branden.</span></div>
+                <div class="field" style="margin-top:20px"><label class="checkbox"><input type="checkbox" name="newsletter" checked> <span>Stuur me het verhaal achter elke nieuwe batch per mail</span></label></div>
+                <div class="field" style="margin-top:10px"><label class="checkbox"><input type="checkbox" name="terms" data-validate="required"> <span>Ik ga akkoord met de <a href="algemene-voorwaarden.html" target="_blank">algemene voorwaarden</a> en heb het <a href="privacy.html" target="_blank">privacybeleid</a> gelezen</span></label><span class="err">Even akkoord geven, dan kunnen we branden.</span></div>
               </fieldset>
             </div>
 
@@ -278,7 +283,7 @@
               <dl>
                 <dt>Zak</dt><dd id="sum-size">500 gram</dd>
                 <dt>Ritme</dt><dd id="sum-freq">1× per maand</dd>
-                <dt>Maling</dt><dd id="sum-grind">Hele bonen</dd>
+                <dt>Bonen</dt><dd id="sum-grind">Hele bonen</dd>
                 <dt>Smaak</dt><dd id="sum-roast">Verras me</dd>
                 <dt>Herkomst</dt><dd>Verrassing ✦</dd>
                 <dt>Verzending</dt><dd>Inbegrepen</dd>
@@ -309,7 +314,7 @@
           <span class="kicker">Welkom bij Zwartwerk</span>
           <h2>Top, <span id="success-name">koffieliefhebber</span>!</h2>
           <p class="script" style="font-size:2rem">We gaan voor je branden.</p>
-          <p class="lead" style="margin:0 auto 28px">Je eerste zak komt op <strong id="success-date">dinsdag</strong>. Je ontvangt een bevestiging per mail. In je account kun je alles beheren: pauzeren, overslaan, je maling aanpassen en je bonen beoordelen.</p>
+          <p class="lead" style="margin:0 auto 28px">Je eerste zak komt op <strong id="success-date">dinsdag</strong>. Je ontvangt een bevestiging per mail. In je account kun je alles beheren: pauzeren, overslaan, je abonnement aanpassen en je bonen beoordelen.</p>
           <a class="btn" href="account.html">Naar mijn account</a>
           <p class="demo-note" style="max-width:520px;margin:24px auto 0">Prototype: in de live-versie reken je hiervoor eerst af bij Mollie met iDEAL | Wero.</p>
         </div>

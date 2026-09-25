@@ -26,13 +26,8 @@
       "2m": { label: "2× per maand", perMonth: 2 }
     },
     cancelDays: 7, // wijzigen/opzeggen kan tot 7 dagen voor de volgende levering
-    grinds: {
-      bonen: "Hele bonen",
-      espresso: "Espresso",
-      filter: "Filter / V60",
-      frenchpress: "French press",
-      mokapot: "Mokapot"
-    },
+    // We versturen uitsluitend hele bonen: die blijven het langst vers.
+    grinds: { bonen: "Hele bonen" },
     roasts: {
       verras: "Verras me",
       licht: "Licht",
@@ -335,7 +330,7 @@
     function update() {
       var size = readChoice(form, "size");
       var freq = readChoice(form, "freq");
-      var grind = readChoice(form, "grind");
+      var grind = "bonen";
       var roast = readChoice(form, "roast");
       var s = CONFIG.sizes[size];
       var f = CONFIG.freqs[freq];
@@ -383,7 +378,7 @@
         sub: {
           size: readChoice(form, "size"),
           freq: readChoice(form, "freq"),
-          grind: readChoice(form, "grind"),
+          grind: "bonen",
           roast: readChoice(form, "roast"),
           pay: "ideal-wero",
           status: "actief",
@@ -541,6 +536,7 @@
     var sub = acc.sub;
     if (!CONFIG.freqs[sub.freq]) sub.freq = sub.freq === "2w" ? "2m" : "1m";
     if (!CONFIG.sizes[sub.size]) sub.size = "500";
+    sub.grind = "bonen";
     if (!sub.anchor) sub.anchor = sub.nextDelivery;
     sub.pay = "ideal-wero";
     acc.deliveries.forEach(function (d) { if (!CONFIG.sizes[d.size]) d.size = "500"; });
@@ -678,7 +674,7 @@
       '<div class="tiles">' +
       '<div class="tile tile--highlight two3">' + nextBlock + '<img class="mystery-bean" src="assets/img/zwartwerk-boon.png" alt=""></div>' +
       '<div class="tile third"><h3>Jouw abonnement</h3><dl class="kv">' +
-      "<dt>Zak</dt><dd>" + esc(size.label) + "</dd><dt>Ritme</dt><dd>" + esc(freq.label) + "</dd><dt>Maling</dt><dd>" + esc(CONFIG.grinds[sub.grind]) + "</dd><dt>Profiel</dt><dd>" + esc(CONFIG.roasts[sub.roast]) + "</dd><dt>Prijs</dt><dd>" + eur.format(size.price) + " / levering</dd></dl><p class=\"muted\" style=\"font-size:.85rem;margin:10px 0 0\">Inclusief verzending</p>" +
+      "<dt>Zak</dt><dd>" + esc(size.label) + "</dd><dt>Ritme</dt><dd>" + esc(freq.label) + "</dd><dt>Bonen</dt><dd>Hele bonen</dd><dt>Profiel</dt><dd>" + esc(CONFIG.roasts[sub.roast]) + "</dd><dt>Prijs</dt><dd>" + eur.format(size.price) + " / levering</dd></dl><p class=\"muted\" style=\"font-size:.85rem;margin:10px 0 0\">Inclusief verzending</p>" +
       '<div class="actions"><button class="link-arrow" style="background:none;border:0;padding:0;cursor:pointer;color:var(--copper)" data-goto="abonnement">Aanpassen</button></div></div>' +
       '<div class="tile third"><h3>Bonenpaspoort</h3><div class="big">' + allBatches.length + " <small>" + (allBatches.length === 1 ? "smaak" : "smaken") + "</small></div>" +
       '<p class="muted" style="margin:8px 0 0">' + countries.length + " " + (countries.length === 1 ? "land" : "landen") + " geproefd · " + rated + " beoordeeld</p>" +
@@ -696,7 +692,7 @@
     var paused = sub.status === "gepauzeerd";
     $("#tab-abonnement").innerHTML =
       '<span class="kicker">Abonnement</span><h2>Jouw abonnement</h2>' +
-      '<p class="lead">Pas je zak, ritme of maling aan wanneer je wilt. Wijzigingen die je tot 7 dagen voor een levering doorgeeft, gelden al voor die levering.</p>' +
+      '<p class="lead">Pas je zak, ritme of smaakvoorkeur aan wanneer je wilt. Wijzigingen die je tot 7 dagen voor een levering doorgeeft, gelden al voor die levering.</p>' +
       '<form id="plan-form" class="tiles">' +
       '<div class="tile wide"><h3>Hoeveelheid</h3><div class="options options--2">' +
       Object.keys(CONFIG.sizes).map(function (k) {
@@ -708,9 +704,7 @@
       Object.keys(CONFIG.freqs).map(function (k) {
         return '<label class="option"><input type="radio" name="freq" value="' + k + '"' + (sub.freq === k ? " checked" : "") + '><span class="card"><span class="title small">' + CONFIG.freqs[k].label + "</span></span></label>";
       }).join("") +
-      '</div><p class="muted" style="font-size:.9rem;margin:12px 0 0">De bonen wisselen per maand. Bij 2× per maand krijg je twee leveringen van dezelfde smaak.</p></div><div class="tile"><h3>Maling</h3><div class="field"><label class="visually-hidden" for="p-grind">Maling</label><select id="p-grind" name="grind">' +
-      Object.keys(CONFIG.grinds).map(function (k) { return '<option value="' + k + '"' + (sub.grind === k ? " selected" : "") + ">" + CONFIG.grinds[k] + "</option>"; }).join("") +
-      '</select></div><h3 style="margin-top:20px">Brandprofiel</h3><div class="field"><label class="visually-hidden" for="p-roast">Brandprofiel</label><select id="p-roast" name="roast">' +
+      '</div><p class="muted" style="font-size:.9rem;margin:12px 0 0">De bonen wisselen per maand. Bij 2× per maand krijg je twee leveringen van dezelfde smaak.</p></div><div class="tile"><h3>Hele bonen</h3><p class="muted" style="margin:0 0 4px">We versturen altijd hele bonen: zo blijft je koffie het langst vers. Maal vlak voor het zetten voor de beste smaak.</p><h3 style="margin-top:20px">Brandprofiel</h3><div class="field"><label class="visually-hidden" for="p-roast">Brandprofiel</label><select id="p-roast" name="roast">' +
       Object.keys(CONFIG.roasts).map(function (k) { return '<option value="' + k + '"' + (sub.roast === k ? " selected" : "") + ">" + CONFIG.roasts[k] + "</option>"; }).join("") +
       "</select></div></div>" +
       '<div class="tile wide"><h3>Notitie voor de brander</h3><div class="field"><label class="visually-hidden" for="p-note">Notitie</label><textarea id="p-note" name="note" placeholder="Bijv. ‘Ik hou van fruitig’ of ‘liever geen hele donkere branding’." style="min-height:90px">' + esc(sub.note) + '</textarea></div><p class="muted" style="font-size:.9rem;margin:10px 0 0">We gebruiken dit (en je beoordelingen) om de verrassing nog beter op jou af te stemmen.</p>' +
@@ -729,7 +723,6 @@
       var f = e.target;
       sub.size = readChoice(f, "size");
       sub.freq = readChoice(f, "freq");
-      sub.grind = f.elements.grind.value;
       sub.roast = f.elements.roast.value;
       sub.note = f.elements.note.value.trim();
       persist();
@@ -748,20 +741,20 @@
       '<p class="lead">Wat eraan komt en wat je al hebt gehad. Elke maand een nieuwe batch, met een eigen batchnummer.</p>' +
       '<h3 style="margin:0 0 12px">Gepland</h3>' +
       (upcoming.length
-        ? '<div class="table-wrap" style="margin-bottom:32px"><table class="table"><thead><tr><th>Datum</th><th>Smaak</th><th>Inhoud</th><th>Maling</th><th>Bedrag</th><th>Status</th></tr></thead><tbody>' +
+        ? '<div class="table-wrap" style="margin-bottom:32px"><table class="table"><thead><tr><th>Datum</th><th>Smaak</th><th>Inhoud</th><th>Bedrag</th><th>Status</th></tr></thead><tbody>' +
         upcoming.map(function (u, i) {
           var d = u.date;
           var status = i === 0 && paused ? '<span class="chip chip--warn">Na pauze</span>'
             : today > deadlineFor(d) ? '<span class="chip chip--copper">Wordt gebrand</span>'
               : '<span class="chip">Gepland</span>';
-          return "<tr><td>" + esc(capitalize(dateFmt.format(d))) + "</td><td>" + (u.newFlavour ? "Nieuwe smaak" : "Zelfde als vorige") + "</td><td>" + esc(size.bags) + "</td><td>" + esc(CONFIG.grinds[sub.grind]) + "</td><td>" + eur.format(size.price) + "</td><td>" + status + "</td></tr>";
+          return "<tr><td>" + esc(capitalize(dateFmt.format(d))) + "</td><td>" + (u.newFlavour ? "Nieuwe smaak" : "Zelfde als vorige") + "</td><td>" + esc(size.bags) + " hele bonen</td><td>" + eur.format(size.price) + "</td><td>" + status + "</td></tr>";
         }).join("") + "</tbody></table></div>"
         : '<p class="muted" style="margin-bottom:32px">Geen geplande leveringen.</p>') +
       '<h3 style="margin:0 0 12px">Geschiedenis</h3>' +
       (acc.deliveries.length
         ? '<div class="table-wrap"><table class="table"><thead><tr><th>Datum</th><th>Batch</th><th>Herkomst</th><th>Inhoud</th><th>Status</th></tr></thead><tbody>' +
         acc.deliveries.slice().reverse().map(function (d) {
-          return "<tr><td>" + dateShort.format(new Date(d.date)) + "</td><td>" + esc(d.batch) + "</td><td>" + esc(d.country) + " · " + esc(d.region) + "</td><td>" + esc(CONFIG.sizes[d.size].bags) + ", " + esc(CONFIG.grinds[d.grind]) + '</td><td><span class="chip chip--ok">Bezorgd</span></td></tr>';
+          return "<tr><td>" + dateShort.format(new Date(d.date)) + "</td><td>" + esc(d.batch) + "</td><td>" + esc(d.country) + " · " + esc(d.region) + "</td><td>" + esc(CONFIG.sizes[d.size].bags) + " hele bonen" + '</td><td><span class="chip chip--ok">Bezorgd</span></td></tr>';
         }).join("") + "</tbody></table></div>"
         : '<p class="muted">Nog geen leveringen. Je eerste zak is in de maak!</p>') +
       '<p class="muted" style="margin-top:20px;font-size:.93rem">Iets mis met een levering? <a href="klantenservice.html#contact">Laat het ons weten</a>, dan lossen we het op.</p>';

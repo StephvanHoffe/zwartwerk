@@ -6,7 +6,7 @@ Website voor **Zwartwerk**, een kleinschalige koffiebranderij uit Baarn met een 
 
 | Pagina | Wat staat erop |
 | --- | --- |
-| `index.html` | Home met alles om een abonnement af te sluiten: hero, uitleg in 4 stappen, "bewuste keuze", uitleg van het etiket, **abonnement-configurator** (hoeveelheid, ritme, maling, smaak, adres, betalen met iDEAL \| Wero) met live prijsoverzicht, herkomstkaart, korte FAQ |
+| `index.html` | Home met alles om een abonnement af te sluiten: hero, uitleg in 4 stappen, "bewuste keuze", uitleg van het etiket, **abonnement-configurator** (hoeveelheid, ritme, smaak, adres, betalen met iDEAL \| Wero) met live prijsoverzicht, herkomstkaart, korte FAQ |
 | `hoe-het-werkt.html` | Stap-voor-stap uitleg, flexibiliteit, brievenbus-uitleg, **herkomstlanden** (kaart + 12 landen), waarom Zwartwerk anders is, bewaartips |
 | `over-ons.html` | Het verhaal van Zwartwerk, de naam, waarden, proces en bedrijfsgegevens |
 | `klantenservice.html` | Snelkoppelingen, FAQ met zoekfunctie en categorieën, contactgegevens en contactformulier (opent het mailprogramma) |
@@ -17,6 +17,7 @@ Website voor **Zwartwerk**, een kleinschalige koffiebranderij uit Baarn met een 
 
 - **250 gram € 16** of **500 gram € 29** per levering, inclusief btw en verzending. 25% korting op de eerste levering.
 - Alles gaat als brievenbuspakje in zakken van 250 gram (500 gram = 2 zakken).
+- Uitsluitend **hele bonen** (geen maaloptie): die blijven het langst vers.
 - **1× of 2× per maand.** De bonen wisselen per maand: bij 2× per maand zijn beide leveringen in die maand dezelfde smaak, de maand erna komt er een nieuwe.
 - Leveringen vallen op dinsdag. De tweede levering bij 2× per maand komt 14 dagen na de eerste.
 - **Wijzigen, overslaan, pauzeren en opzeggen kan tot 7 dagen voor een levering.** Daarna wordt de zak al gebrand en geldt de wijziging vanaf de levering daarna.

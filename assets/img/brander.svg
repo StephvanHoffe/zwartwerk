@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 380" fill="none" stroke="#f3e6d2" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+  <title>Illustratie van een koffiebrander</title>
+  <!-- rook -->
+  <g stroke="#e28a56" stroke-width="2.5" opacity=".85">
+    <path d="M318 44c-10-10 8-16-2-28"/>
+    <path d="M334 48c-10-12 10-18 0-32"/>
+    <path d="M302 50c-8-8 6-12-2-22"/>
+  </g>
+  <!-- schoorsteen -->
+  <path d="M262 112V78c0-10 8-18 18-18h26c8 0 14 6 14 14v-4"/>
+  <path d="M276 112V84c0-6 4-10 10-10h14v-4"/>
+  <rect x="300" y="56" width="30" height="12" rx="3"/>
+  <!-- trechter -->
+  <path d="M146 40h92l-22 58h-48z"/>
+  <path d="M168 98v10h48v-10"/>
+  <g fill="#e28a56" stroke="none">
+    <ellipse cx="172" cy="52" rx="6" ry="4" transform="rotate(-20 172 52)"/>
+    <ellipse cx="190" cy="48" rx="6" ry="4" transform="rotate(15 190 48)"/>
+    <ellipse cx="208" cy="53" rx="6" ry="4" transform="rotate(-8 208 53)"/>
+    <ellipse cx="224" cy="47" rx="6" ry="4" transform="rotate(25 224 47)"/>
+    <ellipse cx="182" cy="62" rx="6" ry="4" transform="rotate(10 182 62)"/>
+    <ellipse cx="200" cy="64" rx="6" ry="4" transform="rotate(-25 200 64)"/>
+  </g>
+  <!-- trommelbehuizing -->
+  <rect x="100" y="108" width="210" height="142" rx="20"/>
+  <path d="M100 136h210" opacity=".35"/>
+  <!-- voorplaat -->
+  <circle cx="172" cy="182" r="54"/>
+  <circle cx="172" cy="182" r="38" fill="#e28a56" fill-opacity=".12"/>
+  <g fill="#e28a56" stroke="none">
+    <ellipse cx="156" cy="196" rx="7" ry="4.5" transform="rotate(-30 156 196)"/>
+    <ellipse cx="172" cy="202" rx="7" ry="4.5" transform="rotate(10 172 202)"/>
+    <ellipse cx="189" cy="195" rx="7" ry="4.5" transform="rotate(35 189 195)"/>
+    <ellipse cx="164" cy="184" rx="7" ry="4.5" transform="rotate(60 164 184)"/>
+    <ellipse cx="182" cy="182" rx="7" ry="4.5" transform="rotate(-15 182 182)"/>
+  </g>
+  <path d="M150 160c8-8 26-10 38-2" opacity=".6"/>
+  <path d="M226 182h14"/>
+  <circle cx="246" cy="182" r="6"/>
+  <!-- bedieningspaneel -->
+  <rect x="254" y="148" width="40" height="72" rx="6"/>
+  <circle cx="274" cy="166" r="8"/>
+  <path d="M274 166l4-5" stroke="#e28a56"/>
+  <circle cx="266" cy="194" r="3" fill="#e28a56" stroke="none"/>
+  <circle cx="282" cy="194" r="3"/>
+  <path d="M264 208h20"/>
+  <!-- onderstel -->
+  <path d="M112 250v18h186v-18"/>
+  <path d="M130 268l-8 70M280 268l8 70"/>
+  <path d="M116 318h180" opacity=".4"/>
+  <!-- stortgoot naar koelbak -->
+  <path d="M146 226l-40 64M166 234l-38 58"/>
+  <!-- koelbak -->
+  <path d="M24 300v16c0 10 41 18 92 18s92-8 92-18v-16" fill="#121110"/>
+  <ellipse cx="116" cy="300" rx="92" ry="18" fill="#121110"/>
+    <path d="M116 300l58-10" stroke="#e28a56"/>
+  <g fill="#e28a56" stroke="none">
+    <ellipse cx="70" cy="302" rx="6" ry="3.6" transform="rotate(-15 70 302)"/>
+    <ellipse cx="88" cy="296" rx="6" ry="3.6" transform="rotate(20 88 296)"/>
+    <ellipse cx="104" cy="306" rx="6" ry="3.6" transform="rotate(-35 104 306)"/>
+    <ellipse cx="136" cy="305" rx="6" ry="3.6" transform="rotate(12 136 305)"/>
+    <ellipse cx="150" cy="296" rx="6" ry="3.6" transform="rotate(-10 150 296)"/>
+    <ellipse cx="164" cy="306" rx="6" ry="3.6" transform="rotate(30 164 306)"/>
+    <ellipse cx="54" cy="296" rx="6" ry="3.6" transform="rotate(5 54 296)"/>
+  </g>
+  <path d="M116 334v20M60 330l-6 24M172 330l6 24"/>
+  <path d="M12 358h396" opacity=".35"/>
+</svg>

@@ -13,15 +13,19 @@
      Instellingen — prijzen en acties hier aanpassen
      ------------------------------------------------------------------------ */
   var CONFIG = {
+    // Prijzen per levering, inclusief verzending. We versturen alleen zakken van
+    // 250 gram, zodat alles door de brievenbus past (500 gram = 2 zakken).
     sizes: {
-      "250": { label: "250 gram", cups: "± 30 koppen", price: 11.95 },
-      "500": { label: "500 gram", cups: "± 60 koppen", price: 21.95 },
-      "1000": { label: "1 kilo", cups: "± 120 koppen", price: 39.95 }
+      "250": { label: "250 gram", bags: "1 zak van 250 gram", cups: "± 30 koppen", price: 16 },
+      "500": { label: "500 gram", bags: "2 zakken van 250 gram", cups: "± 60 koppen", price: 29 }
     },
+    // De bonen wisselen per maand. Bij 2× per maand krijg je binnen een maand
+    // twee leveringen van dezelfde koffie; de maand erna een nieuwe smaak.
     freqs: {
-      "4w": { label: "Elke maand", short: "maandelijks", days: 28, perYear: 13 },
-      "2w": { label: "Elke 2 weken", short: "tweewekelijks", days: 14, perYear: 26 }
+      "1m": { label: "1× per maand", perMonth: 1 },
+      "2m": { label: "2× per maand", perMonth: 2 }
     },
+    cancelDays: 7, // wijzigen/opzeggen kan tot 7 dagen voor de volgende levering
     grinds: {
       bonen: "Hele bonen",
       espresso: "Espresso",
@@ -37,9 +41,9 @@
       "medium-donker": "Medium-donker",
       donker: "Donker"
     },
-    pays: { ideal: "iDEAL", incasso: "SEPA-incasso", creditcard: "Creditcard" },
-    welcomeDiscount: 0.25, // 25% korting op de eerste levering
-    shipping: 0
+    pay: "iDEAL | Wero",
+    email: "info@zwartwerkkoffie.nl",
+    welcomeDiscount: 0.25 // 25% korting op de eerste levering
   };
 
   var eur = new Intl.NumberFormat("nl-NL", { style: "currency", currency: "EUR" });
@@ -141,7 +145,8 @@
   function currentAccount() {
     var email = store.get(SESSION, null);
     if (!email) return null;
-    return getAccounts()[email] || null;
+    var acc = getAccounts()[email];
+    return acc ? migrate(acc) : null;
   }
   function login(email) { store.set(SESSION, email.toLowerCase()); }
   function logout() { store.del(SESSION); }
@@ -152,12 +157,45 @@
   function addDays(d, n) { var x = new Date(d); x.setDate(x.getDate() + n); return x; }
   function startOfDay(d) { var x = new Date(d); x.setHours(0, 0, 0, 0); return x; }
   // Eerste levering: eerstvolgende dinsdag, minimaal 3 dagen vooruit (tijd om vers te branden)
-  function firstDeliveryDate() {
-    var d = addDays(startOfDay(new Date()), 3);
+  function firstDeliveryDate(minDays) {
+    var d = addDays(startOfDay(new Date()), minDays || 3);
     while (d.getDay() !== 2) d = addDays(d, 1);
     return d;
   }
   function capitalize(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+  function addMonths(d, n) {
+    var x = new Date(d);
+    var day = x.getDate();
+    x.setDate(1);
+    x.setMonth(x.getMonth() + n);
+    var last = new Date(x.getFullYear(), x.getMonth() + 1, 0).getDate();
+    x.setDate(Math.min(day, last));
+    return x;
+  }
+
+  /* Leverschema. Elke 'periode' is een maand vanaf de startdatum (anchor) en
+     heeft één smaak. 1× per maand: één levering per periode. 2× per maand:
+     een tweede levering 14 dagen later, met dezelfde bonen. */
+  function schedule(sub, from, count) {
+    var anchor = startOfDay(new Date(sub.anchor));
+    var per = CONFIG.freqs[sub.freq].perMonth;
+    var out = [];
+    var start = startOfDay(from);
+    for (var k = 0; out.length < count && k < 240; k++) {
+      var base = addMonths(anchor, k);
+      while (base.getDay() !== 2) base = addDays(base, 1); // we leveren op dinsdag
+      for (var j = 0; j < per; j++) {
+        var d = addDays(base, j * 14);
+        var skipped = (sub.skipped || []).some(function (x) { return +startOfDay(new Date(x)) === +d; });
+        if (d >= start && !skipped) out.push({ date: d, period: k, newFlavour: j === 0, flavourMonth: base });
+        if (out.length >= count) break;
+      }
+    }
+    return out;
+  }
+  function nextAfter(sub, date) { return schedule(sub, addDays(date, 1), 1)[0].date; }
+  // Laatste dag waarop je nog kunt wijzigen/opzeggen voor een levering
+  function deadlineFor(date) { return addDays(date, -CONFIG.cancelDays); }
 
   /* ------------------------------------------------------------------------
      Toast
@@ -276,7 +314,7 @@
   function initConfigurator(form) {
     // prijzen in de kaarten zetten
     $$("[data-size-price]", form).forEach(function (el) {
-      el.textContent = eur.format(CONFIG.sizes[el.getAttribute("data-size-price")].price) + " per zak";
+      el.textContent = eur.format(CONFIG.sizes[el.getAttribute("data-size-price")].price) + " per levering";
     });
 
     // voorkeuze vanuit ?plan=500 of knoppen met data-pick
@@ -303,18 +341,19 @@
       var f = CONFIG.freqs[freq];
       var price = s.price;
       var firstPrice = price * (1 - CONFIG.welcomeDiscount);
-      var monthly = (price * f.perYear) / 12;
+      var monthly = price * f.perMonth;
 
       $("#sum-size").textContent = s.label;
       $("#sum-freq").textContent = f.label;
       $("#sum-grind").textContent = CONFIG.grinds[grind];
       $("#sum-roast").textContent = CONFIG.roasts[roast];
-      $("#sum-ship").textContent = CONFIG.shipping ? eur.format(CONFIG.shipping) : "Gratis";
       $("#sum-price").textContent = eur.format(price);
       $("#sum-discount").textContent = "− " + eur.format(price - firstPrice);
-      $("#sum-first").textContent = eur.format(firstPrice + CONFIG.shipping);
-      $("#sum-monthly").textContent = "Daarna " + eur.format(price) + " per levering (± " + eur.format(monthly) + " p/m)";
+      $("#sum-first").textContent = eur.format(firstPrice);
+      $("#sum-monthly").textContent = "Daarna " + eur.format(price) + " per levering" + (f.perMonth > 1 ? " (" + eur.format(monthly) + " per maand)" : "");
       $("#sum-date").textContent = capitalize(dateFmt.format(first));
+      var note = $("#freq-note");
+      if (note) note.hidden = f.perMonth < 2;
     }
     form.addEventListener("change", update);
     update();
@@ -346,9 +385,10 @@
           freq: readChoice(form, "freq"),
           grind: readChoice(form, "grind"),
           roast: readChoice(form, "roast"),
-          pay: readChoice(form, "pay"),
+          pay: "ideal-wero",
           status: "actief",
           pausedUntil: null,
+          anchor: first.toISOString(),
           nextDelivery: first.toISOString(),
           note: ""
         },
@@ -426,10 +466,13 @@
     contactForm.addEventListener("submit", function (e) {
       e.preventDefault();
       if (!validateForm(contactForm)) return;
-      contactForm.reset();
-      $("#contact-msg").textContent = "Bedankt! We reageren binnen 1 werkdag.";
+      // Zonder server: open het mailprogramma met een ingevuld bericht
+      var el = contactForm.elements;
+      var body = el.message.value.trim() + "\n\n—\nNaam: " + el.name.value.trim() + "\nE-mail: " + el.email.value.trim() +
+        (el.batch.value.trim() ? "\nBatchnummer: " + el.batch.value.trim() : "");
+      location.href = "mailto:" + CONFIG.email + "?subject=" + encodeURIComponent(el.topic.value) + "&body=" + encodeURIComponent(body);
+      $("#contact-msg").textContent = "Je mailprogramma opent met je bericht. Opent er niets? Mail ons direct op " + CONFIG.email + ".";
       $("#contact-msg").classList.add("ok");
-      toast("Bericht verstuurd — we reageren binnen 1 werkdag.");
     });
   }
 
@@ -451,36 +494,57 @@
   ];
 
   function makeDemoAccount() {
-    var today = startOfDay(new Date());
-    var next = firstDeliveryDate();
-    var deliveries = [];
-    for (var i = 6; i >= 1; i--) {
-      var o = ORIGINS[(6 - i) % ORIGINS.length];
-      var d = addDays(next, -28 * i);
-      deliveries.push({
-        batch: "ZW-" + (d.getFullYear() % 100) + String(d.getMonth() + 1).padStart(2, "0") + "-" + (40 + i * 7),
-        date: d.toISOString(),
+    var next = firstDeliveryDate(10);
+    var sub = {
+      size: "500", freq: "2m", grind: "bonen", roast: "verras", pay: "ideal-wero",
+      status: "actief", pausedUntil: null, note: "Liever niet te zuur.",
+      anchor: addMonths(next, -4).toISOString(), nextDelivery: next.toISOString()
+    };
+    var ratings = [5, 4, 0, 0];
+    var deliveries = schedule(sub, new Date(sub.anchor), 8).map(function (s, i) {
+      var o = ORIGINS[s.period % ORIGINS.length];
+      var m = s.flavourMonth;
+      return {
+        batch: "ZW-" + (m.getFullYear() % 100) + String(m.getMonth() + 1).padStart(2, "0") + "-" + (12 + s.period * 3),
+        date: s.date.toISOString(),
         country: o.country, region: o.region, farm: o.farm, process: o.process, notes: o.notes, roast: o.roast,
-        size: "500", grind: "bonen", price: i === 6 ? 21.95 * (1 - CONFIG.welcomeDiscount) : 21.95,
+        size: "500", grind: "bonen", price: i === 0 ? 29 * (1 - CONFIG.welcomeDiscount) : 29,
         status: "bezorgd",
-        rating: [5, 4, 0, 5, 3, 0][6 - i] || 0
-      });
-    }
+        rating: ratings[s.period] || 0
+      };
+    });
     return {
       name: "Sam de Vries",
       email: "demo@zwartwerk.nl",
       password: "koffie",
       phone: "06 12345678",
-      address: { street: "Branderijstraat", nr: "12", postcode: "1234 AB", city: "Utrecht" },
-      memberSince: addDays(today, -28 * 6 - 5).toISOString(),
+      address: { street: "Voorbeeldstraat", nr: "12", postcode: "3741 AB", city: "Baarn" },
+      memberSince: sub.anchor,
       newsletter: true,
-      sub: {
-        size: "500", freq: "4w", grind: "bonen", roast: "verras", pay: "ideal",
-        status: "actief", pausedUntil: null, nextDelivery: next.toISOString(), note: "Liever niet te zuur."
-      },
+      sub: sub,
       deliveries: deliveries,
       referral: "ZW-SAM482"
     };
+  }
+
+  // Unieke batches (bij 2× per maand komt dezelfde batch twee keer)
+  function batches(acc) {
+    var seen = {};
+    return acc.deliveries.filter(function (d) {
+      if (seen[d.batch]) return false;
+      seen[d.batch] = true;
+      return true;
+    });
+  }
+  // Oudere accounts (uit de eerste versie) bijwerken naar het huidige model
+  function migrate(acc) {
+    var sub = acc.sub;
+    if (!CONFIG.freqs[sub.freq]) sub.freq = sub.freq === "2w" ? "2m" : "1m";
+    if (!CONFIG.sizes[sub.size]) sub.size = "500";
+    if (!sub.anchor) sub.anchor = sub.nextDelivery;
+    sub.pay = "ideal-wero";
+    acc.deliveries.forEach(function (d) { if (!CONFIG.sizes[d.size]) d.size = "500"; });
+    return acc;
   }
 
   function initAccount() {
@@ -579,20 +643,31 @@
         : '<span class="chip">Opgezegd</span>';
 
     var days = Math.max(0, Math.ceil((startOfDay(next) - startOfDay(new Date())) / 864e5));
-    var rated = acc.deliveries.filter(function (d) { return d.rating; }).length;
+    var allBatches = batches(acc);
+    var rated = allBatches.filter(function (d) { return d.rating; }).length;
     var countries = uniq(acc.deliveries.map(function (d) { return d.country; }));
     var last = acc.deliveries[acc.deliveries.length - 1];
+    var today = startOfDay(new Date());
+    var nextInfo = schedule(sub, next, 1)[0];
+    var newFlavour = !nextInfo || +nextInfo.date !== +startOfDay(next) || nextInfo.newFlavour;
+    var locked = today > deadlineFor(next); // binnen 7 dagen: wordt al gebrand
+    var bagsShort = sub.size === "500" ? "2×250g" : "250g";
 
     var nextBlock;
     if (sub.status === "opgezegd") {
-      nextBlock = '<h3>Je abonnement</h3><div class="big">Opgezegd</div><p class="muted" style="margin-top:10px">Jammer dat je gaat! Je kunt op elk moment weer instappen — je bonenhistorie bewaren we, zodat je nooit iets dubbel krijgt.</p><div class="actions"><button class="btn" data-action="restart">Abonnement hervatten</button></div>';
+      nextBlock = '<h3>Je abonnement</h3><div class="big">Opgezegd</div><p class="muted" style="margin-top:10px">Jammer dat je gaat! Je kunt op elk moment weer instappen — je bonenhistorie bewaren we, zodat je geen smaak twee keer krijgt.</p>' + (sub.lastDelivery && new Date(sub.lastDelivery) >= today ? '<p class="muted">Je laatste levering komt nog op ' + esc(dateFmt.format(new Date(sub.lastDelivery))) + '.</p>' : '') + '<div class="actions"><button class="btn" data-action="restart">Abonnement hervatten</button></div>';
     } else if (sub.status === "gepauzeerd") {
       nextBlock = '<h3>Volgende levering ' + statusChip + '</h3><div class="big">' + esc(capitalize(dateFmt.format(next))) + '</div><p class="muted" style="margin-top:10px">Je abonnement staat op pauze. Daarna gaan we gewoon verder met een nieuwe verrassing.</p><div class="actions"><button class="btn" data-action="resume">Nu hervatten</button></div>';
     } else {
       nextBlock = '<h3>Volgende levering ' + statusChip + "</h3>" +
         '<div class="big">' + esc(capitalize(dateFmt.format(next))) + "</div>" +
-        '<div class="countdown" aria-label="Nog ' + days + ' dagen"><div><b>' + days + '</b><span>dagen</span></div><div><b>?</b><span>herkomst</span></div><div><b>' + esc(size.label.replace(" gram", "g").replace("1 kilo", "1kg")) + '</b><span>vers</span></div></div>' +
-        '<p class="muted" style="margin:10px 0 0">Welke bonen? Dat blijft een verrassing tot de brievenbus klepert. Wel beloofd: nooit dezelfde als je eerdere zakken.</p>' +
+        '<div class="countdown" aria-label="Nog ' + days + ' dagen"><div><b>' + days + '</b><span>dagen</span></div><div><b>' + (newFlavour ? "?" : "=") + '</b><span>' + (newFlavour ? "nieuwe smaak" : "zelfde smaak") + '</span></div><div><b>' + bagsShort + '</b><span>brievenbus</span></div></div>' +
+        '<p class="muted" style="margin:10px 0 0">' + (newFlavour
+          ? "Nieuwe maand, nieuwe smaak. Welke bonen? Dat blijft een verrassing tot de brievenbus klepert."
+          : "Tweede levering van deze maand: dezelfde bonen als je vorige zak, zodat je er nog even van kunt genieten. Volgende maand weer iets nieuws.") + "</p>" +
+        '<p class="muted" style="margin:6px 0 0;font-size:.9rem">' + (locked
+          ? "Deze levering wordt al voor je gebrand. Wijzigingen gelden vanaf " + esc(dateFmt.format(nextAfter(sub, next))) + "."
+          : "Wijzigen, overslaan of opzeggen kan nog tot en met " + esc(dateFmt.format(deadlineFor(next))) + ".") + "</p>" +
         '<div class="actions"><button class="btn btn--small" data-action="skip">' + icon("skip") + ' Overslaan</button><button class="btn btn--ghost btn--small" data-action="pause">' + icon("pause") + ' Pauzeren</button><button class="btn btn--ghost btn--small" data-goto="abonnement">' + icon("edit") + " Wijzigen</button></div>";
     }
 
@@ -603,11 +678,11 @@
       '<div class="tiles">' +
       '<div class="tile tile--highlight two3">' + nextBlock + '<img class="mystery-bean" src="assets/img/zwartwerk-boon.png" alt=""></div>' +
       '<div class="tile third"><h3>Jouw abonnement</h3><dl class="kv">' +
-      "<dt>Zak</dt><dd>" + esc(size.label) + "</dd><dt>Ritme</dt><dd>" + esc(freq.label) + "</dd><dt>Maling</dt><dd>" + esc(CONFIG.grinds[sub.grind]) + "</dd><dt>Profiel</dt><dd>" + esc(CONFIG.roasts[sub.roast]) + "</dd><dt>Prijs</dt><dd>" + eur.format(size.price) + " / levering</dd></dl>" +
+      "<dt>Zak</dt><dd>" + esc(size.label) + "</dd><dt>Ritme</dt><dd>" + esc(freq.label) + "</dd><dt>Maling</dt><dd>" + esc(CONFIG.grinds[sub.grind]) + "</dd><dt>Profiel</dt><dd>" + esc(CONFIG.roasts[sub.roast]) + "</dd><dt>Prijs</dt><dd>" + eur.format(size.price) + " / levering</dd></dl><p class=\"muted\" style=\"font-size:.85rem;margin:10px 0 0\">Inclusief verzending</p>" +
       '<div class="actions"><button class="link-arrow" style="background:none;border:0;padding:0;cursor:pointer;color:var(--copper)" data-goto="abonnement">Aanpassen</button></div></div>' +
-      '<div class="tile third"><h3>Bonenpaspoort</h3><div class="big">' + acc.deliveries.length + " <small>" + (acc.deliveries.length === 1 ? "batch" : "batches") + "</small></div>" +
+      '<div class="tile third"><h3>Bonenpaspoort</h3><div class="big">' + allBatches.length + " <small>" + (allBatches.length === 1 ? "smaak" : "smaken") + "</small></div>" +
       '<p class="muted" style="margin:8px 0 0">' + countries.length + " " + (countries.length === 1 ? "land" : "landen") + " geproefd · " + rated + " beoordeeld</p>" +
-      '<div class="progress" aria-hidden="true"><i style="width:' + Math.min(100, (countries.length / 12) * 100) + '%"></i></div><p class="muted" style="font-size:.85rem;margin:0">' + countries.length + " van 12 herkomsten dit jaar</p>" +
+      '<div class="progress" aria-hidden="true"><i style="width:' + Math.min(100, (countries.length / 12) * 100) + '%"></i></div><p class="muted" style="font-size:.85rem;margin:0">' + countries.length + " van 12 herkomstlanden</p>" +
       '<div class="actions"><button class="link-arrow" style="background:none;border:0;padding:0;cursor:pointer;color:var(--copper)" data-goto="paspoort">Bekijk paspoort</button></div></div>' +
       '<div class="tile third"><h3>Laatst ontvangen</h3>' +
       (last
@@ -621,19 +696,19 @@
     var paused = sub.status === "gepauzeerd";
     $("#tab-abonnement").innerHTML =
       '<span class="kicker">Abonnement</span><h2>Jouw abonnement</h2>' +
-      '<p class="lead">Pas je zak, ritme of maling aan wanneer je wilt. Wijzigingen gelden vanaf je volgende levering.</p>' +
+      '<p class="lead">Pas je zak, ritme of maling aan wanneer je wilt. Wijzigingen die je tot 7 dagen voor een levering doorgeeft, gelden al voor die levering.</p>' +
       '<form id="plan-form" class="tiles">' +
-      '<div class="tile wide"><h3>Hoeveelheid</h3><div class="options options--3">' +
+      '<div class="tile wide"><h3>Hoeveelheid</h3><div class="options options--2">' +
       Object.keys(CONFIG.sizes).map(function (k) {
         var s = CONFIG.sizes[k];
-        return '<label class="option"><input type="radio" name="size" value="' + k + '"' + (sub.size === k ? " checked" : "") + '><span class="card"><span class="title">' + s.label + '</span><span class="sub">' + s.cups + '</span><span class="price">' + eur.format(s.price) + "</span></span></label>";
+        return '<label class="option"><input type="radio" name="size" value="' + k + '"' + (sub.size === k ? " checked" : "") + '><span class="card"><span class="title">' + s.label + '</span><span class="sub">' + s.bags + " · " + s.cups + '</span><span class="price">' + eur.format(s.price) + " incl. verzending</span></span></label>";
       }).join("") +
       "</div></div>" +
       '<div class="tile"><h3>Ritme</h3><div class="options">' +
       Object.keys(CONFIG.freqs).map(function (k) {
         return '<label class="option"><input type="radio" name="freq" value="' + k + '"' + (sub.freq === k ? " checked" : "") + '><span class="card"><span class="title small">' + CONFIG.freqs[k].label + "</span></span></label>";
       }).join("") +
-      '</div></div><div class="tile"><h3>Maling</h3><div class="field"><label class="visually-hidden" for="p-grind">Maling</label><select id="p-grind" name="grind">' +
+      '</div><p class="muted" style="font-size:.9rem;margin:12px 0 0">De bonen wisselen per maand. Bij 2× per maand krijg je twee leveringen van dezelfde smaak.</p></div><div class="tile"><h3>Maling</h3><div class="field"><label class="visually-hidden" for="p-grind">Maling</label><select id="p-grind" name="grind">' +
       Object.keys(CONFIG.grinds).map(function (k) { return '<option value="' + k + '"' + (sub.grind === k ? " selected" : "") + ">" + CONFIG.grinds[k] + "</option>"; }).join("") +
       '</select></div><h3 style="margin-top:20px">Brandprofiel</h3><div class="field"><label class="visually-hidden" for="p-roast">Brandprofiel</label><select id="p-roast" name="roast">' +
       Object.keys(CONFIG.roasts).map(function (k) { return '<option value="' + k + '"' + (sub.roast === k ? " selected" : "") + ">" + CONFIG.roasts[k] + "</option>"; }).join("") +
@@ -645,7 +720,7 @@
       '<div class="tile"><h3>Even geen koffie nodig?</h3><p class="muted">Op vakantie of nog genoeg in huis? Sla een levering over of pauzeer tot 3 maanden. Kost niks.</p><div class="actions">' +
       (sub.status === "opgezegd" ? '<button class="btn btn--small" data-action="restart">Hervatten</button>' : paused ? '<button class="btn btn--small" data-action="resume">Hervatten</button>' : '<button class="btn btn--small" data-action="skip">' + icon("skip") + ' Volgende overslaan</button><button class="btn btn--ghost btn--small" data-action="pause">' + icon("pause") + " Pauzeren</button>") +
       "</div></div>" +
-      '<div class="tile"><h3>Opzeggen</h3><p class="muted">Geen vaste looptijd, geen kleine lettertjes. Opzeggen kan tot 2 dagen voor je volgende levering.</p><div class="actions">' +
+      '<div class="tile"><h3>Opzeggen</h3><p class="muted">Geen vaste looptijd, geen kleine lettertjes. Opzeggen kan tot 7 dagen voor je volgende levering.</p><div class="actions">' +
       (sub.status === "opgezegd" ? '<span class="chip">Opgezegd</span>' : '<button class="btn btn--danger btn--small" data-action="cancel">Abonnement opzeggen</button>') +
       "</div></div></div>";
 
@@ -659,26 +734,34 @@
       sub.note = f.elements.note.value.trim();
       persist();
       renderDashboard(acc);
-      toast("Opgeslagen! Geldt vanaf je volgende levering.");
+      toast(locked
+        ? "Opgeslagen! Je levering van " + dateFmt.format(next) + " wordt al gebrand, dus dit geldt vanaf " + dateFmt.format(nextAfter(sub, next)) + "."
+        : "Opgeslagen! Geldt vanaf je volgende levering.");
     });
 
     // ---- LEVERINGEN
-    var upcoming = sub.status === "opgezegd" ? [] : [0, 1, 2].map(function (i) { return addDays(next, i * freq.days); });
+    var upcoming = sub.status === "opgezegd"
+      ? (sub.lastDelivery && new Date(sub.lastDelivery) >= today ? schedule(sub, new Date(sub.lastDelivery), 1) : [])
+      : schedule(sub, next, 4);
     $("#tab-leveringen").innerHTML =
       '<span class="kicker">Leveringen</span><h2>Leveringen</h2>' +
-      '<p class="lead">Wat eraan komt en wat je al hebt gehad. Elke zak heeft een eigen batchnummer.</p>' +
+      '<p class="lead">Wat eraan komt en wat je al hebt gehad. Elke maand een nieuwe batch, met een eigen batchnummer.</p>' +
       '<h3 style="margin:0 0 12px">Gepland</h3>' +
       (upcoming.length
-        ? '<div class="table-wrap" style="margin-bottom:32px"><table class="table"><thead><tr><th>Datum</th><th>Inhoud</th><th>Maling</th><th>Bedrag</th><th>Status</th></tr></thead><tbody>' +
-        upcoming.map(function (d, i) {
-          return "<tr><td>" + esc(capitalize(dateFmt.format(d))) + "</td><td>" + esc(size.label) + " · verrassing</td><td>" + esc(CONFIG.grinds[sub.grind]) + "</td><td>" + eur.format(size.price) + "</td><td>" + (i === 0 ? (paused ? '<span class="chip chip--warn">Na pauze</span>' : '<span class="chip chip--copper">Wordt gebrand</span>') : '<span class="chip">Gepland</span>') + "</td></tr>";
+        ? '<div class="table-wrap" style="margin-bottom:32px"><table class="table"><thead><tr><th>Datum</th><th>Smaak</th><th>Inhoud</th><th>Maling</th><th>Bedrag</th><th>Status</th></tr></thead><tbody>' +
+        upcoming.map(function (u, i) {
+          var d = u.date;
+          var status = i === 0 && paused ? '<span class="chip chip--warn">Na pauze</span>'
+            : today > deadlineFor(d) ? '<span class="chip chip--copper">Wordt gebrand</span>'
+              : '<span class="chip">Gepland</span>';
+          return "<tr><td>" + esc(capitalize(dateFmt.format(d))) + "</td><td>" + (u.newFlavour ? "Nieuwe smaak" : "Zelfde als vorige") + "</td><td>" + esc(size.bags) + "</td><td>" + esc(CONFIG.grinds[sub.grind]) + "</td><td>" + eur.format(size.price) + "</td><td>" + status + "</td></tr>";
         }).join("") + "</tbody></table></div>"
         : '<p class="muted" style="margin-bottom:32px">Geen geplande leveringen.</p>') +
       '<h3 style="margin:0 0 12px">Geschiedenis</h3>' +
       (acc.deliveries.length
         ? '<div class="table-wrap"><table class="table"><thead><tr><th>Datum</th><th>Batch</th><th>Herkomst</th><th>Inhoud</th><th>Status</th></tr></thead><tbody>' +
         acc.deliveries.slice().reverse().map(function (d) {
-          return "<tr><td>" + dateShort.format(new Date(d.date)) + "</td><td>" + esc(d.batch) + "</td><td>" + esc(d.country) + " · " + esc(d.region) + "</td><td>" + esc(CONFIG.sizes[d.size].label) + ", " + esc(CONFIG.grinds[d.grind]) + '</td><td><span class="chip chip--ok">Bezorgd</span></td></tr>';
+          return "<tr><td>" + dateShort.format(new Date(d.date)) + "</td><td>" + esc(d.batch) + "</td><td>" + esc(d.country) + " · " + esc(d.region) + "</td><td>" + esc(CONFIG.sizes[d.size].bags) + ", " + esc(CONFIG.grinds[d.grind]) + '</td><td><span class="chip chip--ok">Bezorgd</span></td></tr>';
         }).join("") + "</tbody></table></div>"
         : '<p class="muted">Nog geen leveringen. Je eerste zak is in de maak!</p>') +
       '<p class="muted" style="margin-top:20px;font-size:.93rem">Iets mis met een levering? <a href="klantenservice.html#contact">Laat het ons weten</a>, dan lossen we het op.</p>';
@@ -686,18 +769,17 @@
     // ---- PASPOORT
     $("#tab-paspoort").innerHTML =
       '<span class="kicker">Bonenpaspoort</span><h2>Jouw bonenpaspoort</h2>' +
-      '<p class="lead">Elke batch die je van ons kreeg, met herkomst en smaaknotities. Geef ze een score: hoe meer we weten, hoe beter we je kunnen verrassen.</p>' +
-      (acc.deliveries.length
+      '<p class="lead">Elke smaak die je van ons kreeg, met herkomst en smaaknotities. Geef ze een score: hoe meer we weten, hoe beter we je kunnen verrassen.</p>' +
+      (allBatches.length
         ? '<div class="world"><span class="lbl">Landen in je paspoort</span><div class="world-list" style="margin-top:10px">' + countries.map(function (c) { return '<span class="chip chip--copper">' + icon("pin").replace("<svg", '<svg style="width:14px;height:14px"') + " " + esc(c) + "</span>"; }).join("") + "</div></div>" +
         '<div class="passport">' +
-        acc.deliveries.slice().reverse().map(function (d) {
-          var idx = acc.deliveries.indexOf(d);
+        allBatches.slice().reverse().map(function (d) {
           return '<article class="bean-card"><header><div><div class="batch">Batch ' + esc(d.batch) + '</div><div class="country">' + esc(d.country) + '</div><div class="farm">' + esc(d.region) + " · " + esc(d.farm) + "</div></div>" +
             '<span class="chip">' + esc(d.process) + "</span></header>" +
             '<div class="notes">' + d.notes.map(function (n) { return '<span class="chip">' + esc(n) + "</span>"; }).join("") + "</div>" +
             '<div class="roast-scale" aria-label="Brandprofiel ' + d.roast + ' van 5">' + ["Light", "Med. light", "Medium", "Med. dark", "Dark"].map(function (l, i) { return '<span class="' + (i + 1 === d.roast ? "on" : "") + '">' + l + "</span>"; }).join("") + "</div>" +
             '<div class="stars" role="group" aria-label="Beoordeling"><span class="lbl">' + (d.rating ? "Jouw score" : "Beoordeel") + "</span>" +
-            [1, 2, 3, 4, 5].map(function (n) { return '<button type="button" class="' + (n <= d.rating ? "on" : "") + '" data-rate="' + idx + ":" + n + '" aria-label="' + n + ' sterren">' + icon("star") + "</button>"; }).join("") +
+            [1, 2, 3, 4, 5].map(function (n) { return '<button type="button" class="' + (n <= d.rating ? "on" : "") + '" data-rate="' + esc(d.batch) + ":" + n + '" aria-label="' + n + ' sterren">' + icon("star") + "</button>"; }).join("") +
             "</div></article>";
         }).join("") + "</div>"
         : '<div class="panel center"><img src="assets/img/zwartwerk-boon-lijn.png" alt="" style="width:200px;margin:0 auto 18px;opacity:.8"><h3>Je paspoort is nog leeg</h3><p class="muted" style="margin:0">Na je eerste levering verschijnt hier je eerste stempel.</p></div>');
@@ -706,13 +788,13 @@
     var invoices = acc.deliveries.slice().reverse();
     $("#tab-betalingen").innerHTML =
       '<span class="kicker">Betalingen</span><h2>Betalingen & facturen</h2>' +
-      '<p class="lead">We rekenen pas af als je zak onderweg is. Facturen kun je hier downloaden.</p>' +
-      '<div class="tiles" style="margin-bottom:24px"><div class="tile"><h3>Betaalmethode</h3><div class="big" style="font-size:2rem">' + esc(CONFIG.pays[sub.pay]) + '</div><p class="muted" style="margin:8px 0 0">' + (sub.pay === "ideal" ? "Na je eerste iDEAL-betaling schrijven we volgende leveringen automatisch af (SEPA)." : sub.pay === "creditcard" ? "Kaart eindigend op •••• 4242" : "NL•• •••• •••• •••• 42") + '</p><div class="actions"><button class="btn btn--ghost btn--small" data-action="change-pay">Wijzigen</button></div></div>' +
-      '<div class="tile"><h3>Totaal besteed</h3><div class="big">' + eur.format(acc.deliveries.reduce(function (s, d) { return s + d.price; }, 0)) + '</div><p class="muted" style="margin:8px 0 0">Aan ' + acc.deliveries.length + " zakken vers gebrande koffie. Verzending altijd gratis.</p></div></div>" +
+      '<p class="lead">We rekenen pas af als je zak onderweg is. Alle bedragen zijn inclusief btw en verzending.</p>' +
+      '<div class="tiles" style="margin-bottom:24px"><div class="tile"><h3>Betaalmethode</h3><div class="big" style="font-size:2rem">' + esc(CONFIG.pay) + '</div><p class="muted" style="margin:8px 0 0">Via Mollie. Je eerste betaling deed je met iDEAL | Wero; volgende leveringen schrijven we automatisch af van dezelfde rekening (NL•• •••• •••• •••• 42).</p><div class="actions"><button class="btn btn--ghost btn--small" data-action="change-pay">Andere rekening koppelen</button></div></div>' +
+      '<div class="tile"><h3>Totaal besteed</h3><div class="big">' + eur.format(acc.deliveries.reduce(function (s, d) { return s + d.price; }, 0)) + '</div><p class="muted" style="margin:8px 0 0">Aan ' + acc.deliveries.length + " leveringen vers gebrande koffie, verzending inbegrepen.</p></div></div>" +
       (invoices.length
         ? '<div class="table-wrap"><table class="table"><thead><tr><th>Factuur</th><th>Datum</th><th>Omschrijving</th><th>Bedrag</th><th>Status</th><th></th></tr></thead><tbody>' +
         invoices.map(function (d, i) {
-          return "<tr><td>F" + (2400 + invoices.length - i) + "</td><td>" + dateShort.format(new Date(d.date)) + "</td><td>" + esc(CONFIG.sizes[d.size].label) + " · batch " + esc(d.batch) + "</td><td>" + eur.format(d.price) + '</td><td><span class="chip chip--ok">Betaald</span></td><td><a href="#" data-action="invoice">PDF</a></td></tr>';
+          return "<tr><td>F" + (2400 + invoices.length - i) + "</td><td>" + dateShort.format(new Date(d.date)) + "</td><td>" + esc(CONFIG.sizes[d.size].label) + " koffie · batch " + esc(d.batch) + "</td><td>" + eur.format(d.price) + '</td><td><span class="chip chip--ok">Betaald</span></td><td><a href="#" data-action="invoice">PDF</a></td></tr>';
         }).join("") + "</tbody></table></div>"
         : '<p class="muted">Nog geen facturen.</p>');
 
@@ -765,7 +847,7 @@
       var rate = e.target.closest("[data-rate]");
       if (rate) {
         var p = rate.getAttribute("data-rate").split(":");
-        acc.deliveries[+p[0]].rating = +p[1];
+        acc.deliveries.forEach(function (d) { if (d.batch === p[0]) d.rating = +p[1]; });
         persist();
         renderDashboard(acc);
         openTab("paspoort");
@@ -791,17 +873,29 @@
         return;
       }
       if (action === "skip") {
-        confirmModal("Volgende levering overslaan?", "Je levering van " + dateFmt.format(new Date(sub.nextDelivery)) + " slaan we over. Je volgende zak komt dan op " + dateFmt.format(addDays(new Date(sub.nextDelivery), freq.days)) + ".", "Ja, overslaan", function () {
-          sub.nextDelivery = addDays(new Date(sub.nextDelivery), freq.days).toISOString();
-          persist(); renderDashboard(acc); toast("Levering overgeslagen.");
-        });
+        // Binnen 7 dagen wordt de zak al gebrand: dan kun je pas de levering daarna overslaan
+        var target = locked ? nextAfter(sub, next) : next;
+        var after = nextAfter(sub, target);
+        confirmModal(locked ? "Levering van " + dateFmt.format(target) + " overslaan?" : "Volgende levering overslaan?",
+          (locked ? "Je levering van " + dateFmt.format(next) + " wordt al voor je gebrand en komt gewoon. " : "") +
+          "We slaan de levering van " + dateFmt.format(target) + " over. De zak daarna komt op " + dateFmt.format(after) + ".",
+          "Ja, overslaan", function () {
+            if (!locked) sub.nextDelivery = after.toISOString();
+            else (sub.skipped = sub.skipped || []).push(target.toISOString());
+            persist(); renderDashboard(acc); toast("Levering overgeslagen.");
+          });
         return;
       }
       if (action === "pause") { pauseModal(); return; }
       if (action === "resume" || action === "restart") {
         sub.status = "actief";
         sub.pausedUntil = null;
-        if (new Date(sub.nextDelivery) < new Date() || action === "restart") sub.nextDelivery = firstDeliveryDate().toISOString();
+        sub.lastDelivery = null;
+        var earliest = firstDeliveryDate();
+        if (action === "restart" || new Date(sub.nextDelivery) < earliest) {
+          if (action === "restart") sub.anchor = earliest.toISOString();
+          sub.nextDelivery = schedule(sub, earliest, 1)[0].date.toISOString();
+        }
         persist(); renderDashboard(acc);
         toast(action === "restart" ? "Welkom terug! Je volgende verrassing is onderweg." : "Hervat! We branden weer voor je.");
         return;
@@ -815,39 +909,52 @@
       d.addEventListener("close", function () { if (d.returnValue === "ok") onOk(); });
     }
     function pauseModal() {
-      var d = modal('<h2>Abonnement pauzeren</h2><p class="muted">Hoe lang wil je pauzeren? Je kunt altijd eerder hervatten.</p><div class="options" style="margin-bottom:8px">' +
-        [1, 2, 3].map(function (m, i) { return '<label class="option"><input type="radio" name="months" value="' + m + '"' + (i === 0 ? " checked" : "") + '><span class="card"><span class="title small">' + m + " " + (m === 1 ? "maand" : "maanden") + '</span><span class="sub">Tot ' + dateFmt.format(addDays(new Date(), m * 30)) + "</span></span></label>"; }).join("") +
+      var from = locked ? nextAfter(sub, next) : next; // eerste levering die nog gepauzeerd kan worden
+      var d = modal('<h2>Abonnement pauzeren</h2><p class="muted">Hoe lang wil je pauzeren? Je kunt altijd eerder hervatten.' + (locked ? " Je levering van " + esc(dateFmt.format(next)) + " wordt al gebrand en komt nog." : "") + '</p><div class="options" style="margin-bottom:8px">' +
+        [1, 2, 3].map(function (m, i) {
+          var resume = schedule(sub, addMonths(from, m), 1)[0].date;
+          return '<label class="option"><input type="radio" name="months" value="' + m + '"' + (i === 0 ? " checked" : "") + '><span class="card"><span class="title small">' + m + " " + (m === 1 ? "maand" : "maanden") + '</span><span class="sub">Eerstvolgende levering: ' + esc(dateFmt.format(resume)) + "</span></span></label>";
+        }).join("") +
         '</div><div class="actions"><button class="btn btn--ghost" value="cancel">Terug</button><button class="btn" value="ok">Pauzeren</button></div>');
       d.addEventListener("close", function () {
         if (d.returnValue !== "ok") return;
         var m = +readChoice(d, "months");
-        var until = addDays(startOfDay(new Date()), m * 30);
-        while (until.getDay() !== 2) until = addDays(until, 1);
+        var resume = schedule(sub, addMonths(from, m), 1)[0].date;
+        if (locked) {
+          // de levering die al gebrand wordt gaat nog door; daarna pauze
+          sub.pausedUntil = resume.toISOString();
+          (sub.skipped = sub.skipped || []);
+          schedule(sub, addDays(next, 1), 12).forEach(function (u) { if (u.date < resume) sub.skipped.push(u.date.toISOString()); });
+          persist(); renderDashboard(acc); toast("Na je levering van " + dateFmt.format(next) + " pauzeren we tot " + dateFmt.format(resume) + ".");
+          return;
+        }
         sub.status = "gepauzeerd";
-        sub.pausedUntil = until.toISOString();
-        sub.nextDelivery = until.toISOString();
-        persist(); renderDashboard(acc); toast("Gepauzeerd tot " + dateFmt.format(until) + ".");
+        sub.pausedUntil = resume.toISOString();
+        sub.nextDelivery = resume.toISOString();
+        persist(); renderDashboard(acc); toast("Gepauzeerd. Je volgende levering is op " + dateFmt.format(resume) + ".");
       });
     }
     function cancelModal() {
-      var d = modal('<h2>Jammer dat je gaat</h2><p class="muted">Mogen we vragen waarom? Daar leren we van. <strong style="color:var(--cream)">Tip:</strong> pauzeren kan ook, dan houden we je plekje warm.</p>' +
+      var d = modal('<h2>Jammer dat je gaat</h2><p class="muted">' + (locked
+          ? "Je levering van " + esc(dateFmt.format(next)) + " wordt al voor je gebrand; die ontvang je nog. Daarna stopt je abonnement. "
+          : "Je abonnement stopt direct; je volgende levering (" + esc(dateFmt.format(next)) + ") komt niet meer. ") +
+        'Mogen we vragen waarom? Daar leren we van. <strong style="color:var(--cream)">Tip:</strong> pauzeren kan ook, dan houden we je plekje warm.</p>' +
         '<div class="field" style="margin-bottom:16px"><label class="lbl" for="cancel-reason">Reden</label><select id="cancel-reason"><option>Te veel koffie in huis</option><option>Te duur</option><option>Smaak viel tegen</option><option>Ik ga ergens anders koffie halen</option><option>Anders</option></select></div>' +
         '<div class="actions"><button class="btn btn--ghost" value="pause">Liever pauzeren</button><button class="btn btn--danger" value="ok">Definitief opzeggen</button></div>');
       d.addEventListener("close", function () {
         if (d.returnValue === "pause") { pauseModal(); return; }
         if (d.returnValue !== "ok") return;
         sub.status = "opgezegd";
+        sub.lastDelivery = locked ? next.toISOString() : null;
         persist(); renderDashboard(acc); openTab("abonnement"); toast("Je abonnement is opgezegd. Je bent altijd welkom terug.");
       });
     }
     function payModal() {
-      var d = modal('<h2>Betaalmethode</h2><div class="options" style="margin-bottom:8px">' +
-        Object.keys(CONFIG.pays).map(function (k) { return '<label class="option"><input type="radio" name="pay" value="' + k + '"' + (sub.pay === k ? " checked" : "") + '><span class="card"><span class="title small">' + CONFIG.pays[k] + "</span></span></label>"; }).join("") +
-        '</div><p class="muted" style="font-size:.9rem">In de live-versie word je hierna doorgestuurd naar de betaalomgeving om de nieuwe methode te bevestigen.</p><div class="actions"><button class="btn btn--ghost" value="cancel">Terug</button><button class="btn" value="ok">Opslaan</button></div>');
+      var d = modal('<h2>Andere rekening koppelen</h2><p class="muted">Je gaat naar de beveiligde betaalomgeving van Mollie. Daar doe je een verificatiebetaling van € 0,01 met iDEAL | Wero vanaf je nieuwe rekening. Volgende leveringen schrijven we daarna van die rekening af.</p>' +
+        '<p class="demo-note">Prototype: de koppeling met Mollie wordt actief zodra de site live gaat.</p><div class="actions"><button class="btn btn--ghost" value="cancel">Terug</button><button class="btn" value="ok">Naar Mollie</button></div>');
       d.addEventListener("close", function () {
         if (d.returnValue !== "ok") return;
-        sub.pay = readChoice(d, "pay");
-        persist(); renderDashboard(acc); openTab("betalingen"); toast("Betaalmethode bijgewerkt.");
+        toast("In de live-versie ga je nu naar Mollie.");
       });
     }
   }

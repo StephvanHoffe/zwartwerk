@@ -6,7 +6,7 @@
   <title>Klantenservice — Zwartwerk</title>
   <meta name="description" content="Veelgestelde vragen over je Zwartwerk koffieabonnement, bezorging en betalen. Of neem direct contact met ons op.">
   <meta name="theme-color" content="#121110">
-  <meta property="og:title" content="Zwartwerk — Koffie uit kleine oplage">
+  <meta property="og:title" content="Klantenservice — Zwartwerk">
   <meta property="og:description" content="Elke maand andere bonen. Altijd vers gebrand. Nooit twee keer dezelfde.">
   <meta property="og:image" content="assets/img/zakken.jpg">
   <link rel="icon" type="image/png" href="assets/img/favicon.png">
@@ -18,7 +18,12 @@
 <body>
   <a class="visually-hidden" href="#main">Naar de inhoud</a>
 
-  <div class="announce">Eerste levering 25% korting · Gratis verzending · Altijd opzegbaar</div>
+  <div class="announce">
+    <div class="announce__inner">
+      <span class="announce__main"><img src="assets/img/zwartwerk-boon.png" alt="" width="14" height="17">Nooit 2× dezelfde — elke maand een nieuwe smaak</span>
+      <span class="announce__extra">Eerste levering 25% korting · Verzending inbegrepen · Past door de brievenbus</span>
+    </div>
+  </div>
 
   <header class="site-header">
     <div class="wrap">
@@ -29,6 +34,7 @@
       <nav class="nav" id="nav" aria-label="Hoofdmenu">
         <a href="index.html#abonnement">Abonnement</a>
         <a href="hoe-het-werkt.html">Hoe het werkt</a>
+        <a href="over-ons.html">Over ons</a>
         <a href="klantenservice.html" aria-current="page">Klantenservice</a>
         <a href="account.html" class="nav-account"><svg aria-hidden="true"><use href="#i-user"/></svg><span data-account-label>Inloggen</span></a>
         <a href="index.html#abonnement" class="btn">Start abonnement</a>
@@ -82,10 +88,11 @@
             <div class="faq-group" data-cat="abonnement" id="faq-abonnement">
               <h3>Abonnement</h3>
               <div class="faq">
-                <details><summary>Hoe werkt het abonnement?</summary><div class="answer"><p>Je kiest een hoeveelheid (250 g, 500 g of 1 kg), een ritme (elke maand of elke twee weken) en een maling. Wij sturen je elke levering vers gebrande bonen van een andere herkomst. Welke precies, is elke keer een verrassing.</p></div></details>
-                <details><summary>Zit ik vast aan een looptijd?</summary><div class="answer"><p>Nee. Het abonnement is maandelijks opzegbaar zonder opzegtermijn. Je kunt opzeggen tot 2 dagen voor je volgende levering, direct in je account.</p></div></details>
-                <details><summary>Kan ik een levering overslaan of pauzeren?</summary><div class="answer"><p>Ja. In je account sla je met één klik je volgende levering over, of pauzeer je je abonnement voor 1, 2 of 3 maanden. Hervatten kan altijd eerder.</p></div></details>
-                <details><summary>Kan ik mijn hoeveelheid of maling aanpassen?</summary><div class="answer"><p>Zeker. Ga naar <a href="account.html#abonnement">Mijn account → Abonnement</a>. Wijzigingen die je tot 2 dagen voor je levering doorgeeft, gelden direct voor je volgende zak.</p></div></details>
+                <details><summary>Hoe werkt het abonnement?</summary><div class="answer"><p>Je kiest een hoeveelheid (250 gram voor € 16 of 500 gram voor € 29 per levering, inclusief verzending), een ritme (1× of 2× per maand) en een maling. Elke maand sturen we je vers gebrande bonen van een andere herkomst. Welke precies, is elke maand een verrassing.</p></div></details>
+                <details><summary>Wat gebeurt er als ik 2× per maand kies?</summary><div class="answer"><p>De bonen wisselen per maand. Bij 2× per maand krijg je twee leveringen van dezelfde smaak, ongeveer twee weken na elkaar. Zo heb je de hele maand verse voorraad. De maand erna krijg je weer een nieuwe smaak.</p></div></details>
+                <details><summary>Zit ik vast aan een looptijd?</summary><div class="answer"><p>Nee. Het abonnement heeft geen vaste looptijd en is maandelijks opzegbaar. Zeg je op tot 7 dagen voor je volgende levering, dan komt die levering niet meer. Zeg je later op, dan wordt die zak al voor je gebrand en ontvang je hem nog. Opzeggen doe je direct in je account.</p></div></details>
+                <details><summary>Kan ik een levering overslaan of pauzeren?</summary><div class="answer"><p>Ja. In je account sla je met één klik een levering over, of pauzeer je je abonnement voor 1, 2 of 3 maanden. Doe dit uiterlijk 7 dagen voor de levering. Hervatten kan altijd eerder.</p></div></details>
+                <details><summary>Kan ik mijn hoeveelheid of maling aanpassen?</summary><div class="answer"><p>Zeker. Ga naar <a href="account.html#abonnement">Mijn account → Abonnement</a>. Wijzigingen die je tot 7 dagen voor je levering doorgeeft, gelden al voor die levering. Anders gelden ze vanaf de levering daarna.</p></div></details>
                 <details><summary>Kan ik een abonnement cadeau geven?</summary><div class="answer"><p>Een cadeau-abonnement is in de maak. Wil je nu al iemand verrassen? Neem even contact op, dan regelen we het samen. Via je account kun je ook een uitnodigingscode delen: je vriend krijgt dan de eerste zak halve prijs.</p></div></details>
               </div>
             </div>
@@ -93,9 +100,9 @@
             <div class="faq-group" data-cat="koffie" id="faq-koffie">
               <h3>De koffie</h3>
               <div class="faq">
-                <details><summary>Krijg ik echt nooit twee keer dezelfde bonen?</summary><div class="answer"><p>Echt niet. We houden per account bij welke batches je hebt ontvangen. Je krijgt altijd een batch die je nog niet eerder van ons kreeg.</p></div></details>
+                <details><summary>Krijg ik echt nooit twee keer dezelfde bonen?</summary><div class="answer"><p>Elke maand krijg je een smaak die je nog niet eerder van ons kreeg: we houden per account bij welke batches je hebt ontvangen. Alleen als je 2× per maand hebt gekozen, zijn de twee leveringen binnen dezelfde maand bewust dezelfde koffie.</p></div></details>
                 <details><summary>Kan ik invloed uitoefenen op wat ik krijg?</summary><div class="answer"><p>Ja. Je kunt een brandprofiel kiezen (van licht tot donker) en je kunt elke batch beoordelen in je bonenpaspoort. Je kunt ook een notitie voor de brander achterlaten, zoals ‘liever niet te zuur’. De herkomst blijft wel een verrassing.</p></div></details>
-                <details><summary>Wat als ik de koffie niet lekker vind?</summary><div class="answer"><p>Dat kan gebeuren — smaak is persoonlijk. Geef de batch een lage score, dan houden we daar rekening mee. Echt helemaal niet te drinken? <a href="#contact">Laat het ons weten</a>, dan maken we het goed.</p></div></details>
+                <details><summary>Wat als ik de koffie niet lekker vind?</summary><div class="answer"><p>Dat kan gebeuren — smaak is persoonlijk. Geef de batch een lage score in je bonenpaspoort, dan houden we daar rekening mee bij je volgende verrassingen. En volgende maand krijg je sowieso weer iets anders. We horen ook graag wat je ervan vond via <a href="#contact">het contactformulier</a>.</p></div></details>
                 <details><summary>Welke maling moet ik kiezen?</summary><div class="answer"><p>Heb je een eigen molen? Kies dan altijd hele bonen: die blijven het langst vers. Anders: <strong>espresso</strong> (heel fijn) voor espressomachines, <strong>mokapot</strong> (fijn), <strong>filter/V60</strong> (medium) voor filterkoffie en slow coffee, en <strong>French press</strong> (grof).</p></div></details>
                 <details><summary>Hoe lang blijven de bonen vers?</summary><div class="answer"><p>Hele bonen zijn op hun best tussen een paar dagen en zo’n vier tot zes weken na de branddatum. Gemalen koffie verliest sneller aroma, reken op twee à drie weken. Bewaar de zak goed gesloten, donker en niet in de koelkast.</p></div></details>
                 <details><summary>Hebben jullie ook cafeïnevrije koffie?</summary><div class="answer"><p>Op dit moment nog niet in het abonnement. Heb je interesse? Laat het ons weten — hoe meer vraag, hoe sneller we het toevoegen.</p></div></details>
@@ -105,11 +112,11 @@
             <div class="faq-group" data-cat="bezorging" id="faq-bezorging">
               <h3>Bezorging</h3>
               <div class="faq">
-                <details><summary>Wanneer wordt mijn koffie bezorgd?</summary><div class="answer"><p>Je ziet de datum van je volgende levering altijd in je account. We branden kort voor verzending en je ontvangt een mail met track &amp; trace zodra je zak onderweg is.</p></div></details>
-                <details><summary>Past de zak door de brievenbus?</summary><div class="answer"><p>De zakken van 250 en 500 gram versturen we als brievenbuspakje. De kilozak komt als pakket; ben je niet thuis, dan wordt die bij de buren of een afhaalpunt afgeleverd.</p></div></details>
-                <details><summary>Wat kost verzending?</summary><div class="answer"><p>Niets. Verzending binnen Nederland is altijd gratis bij een abonnement.</p></div></details>
+                <details><summary>Wanneer wordt mijn koffie bezorgd?</summary><div class="answer"><p>Je ziet de datum van je volgende levering altijd in je account. Ongeveer een week van tevoren gaan we voor je branden, en je ontvangt een mail met track &amp; trace zodra je koffie onderweg is.</p></div></details>
+                <details><summary>Past de zak door de brievenbus?</summary><div class="answer"><p>Ja, altijd. We versturen uitsluitend zakken van 250 gram, precies zodat alles door de brievenbus past en je nooit thuis hoeft te blijven. Kies je 500 gram, dan krijg je twee zakken van 250 gram.</p></div></details>
+                <details><summary>Wat kost verzending?</summary><div class="answer"><p>Niets extra: verzending binnen Nederland zit altijd in de prijs. Je betaalt € 16 (250 gram) of € 29 (500 gram) per levering, en dat is alles.</p></div></details>
                 <details><summary>Bezorgen jullie ook in België?</summary><div class="answer"><p>Op dit moment bezorgen we alleen in Nederland. België staat hoog op ons lijstje.</p></div></details>
-                <details><summary>Ik ga verhuizen, wat nu?</summary><div class="answer"><p>Pas je adres aan in <a href="account.html#gegevens">Mijn account → Gegevens</a>. Doe dit uiterlijk 2 dagen voor je volgende levering.</p></div></details>
+                <details><summary>Ik ga verhuizen, wat nu?</summary><div class="answer"><p>Pas je adres aan in <a href="account.html#gegevens">Mijn account → Gegevens</a>. Doe dit uiterlijk 7 dagen voor je volgende levering.</p></div></details>
                 <details><summary>Mijn zak is beschadigd of niet aangekomen</summary><div class="answer"><p>Vervelend! <a href="#contact">Neem contact met ons op</a> met je batchnummer of leverdatum, dan sturen we zo snel mogelijk een nieuwe zak.</p></div></details>
               </div>
             </div>
@@ -117,8 +124,9 @@
             <div class="faq-group" data-cat="betalen" id="faq-betalen">
               <h3>Betalen</h3>
               <div class="faq">
-                <details><summary>Hoe kan ik betalen?</summary><div class="answer"><p>Met iDEAL, SEPA-incasso of creditcard. Bij iDEAL betaal je de eerste levering direct; volgende leveringen schrijven we automatisch af.</p></div></details>
-                <details><summary>Wanneer wordt er afgeschreven?</summary><div class="answer"><p>Pas als je zak wordt verstuurd. Sla je een levering over of pauzeer je, dan betaal je ook niets.</p></div></details>
+                <details><summary>Hoe kan ik betalen?</summary><div class="answer"><p>Met iDEAL | Wero, via onze betaalpartner Mollie. Je betaalt je eerste levering direct bij het afsluiten. Daarmee geef je ook een machtiging, zodat we volgende leveringen automatisch van dezelfde rekening afschrijven.</p></div></details>
+                <details><summary>Wat is Wero?</summary><div class="answer"><p>Wero is het nieuwe Europese betaalsysteem dat iDEAL in Nederland stap voor stap opvolgt. Je betaalt gewoon via je eigen bank-app, net als je gewend bent. Bij ons werkt het allebei: je ziet ‘iDEAL | Wero’ bij het afrekenen.</p></div></details>
+                <details><summary>Wanneer wordt er afgeschreven?</summary><div class="answer"><p>Je eerste levering betaal je bij het afsluiten. Daarna schrijven we elke levering af rond de verzenddatum. Sla je een levering over of pauzeer je, dan betaal je ook niets. Een automatische afschrijving kun je altijd binnen 8 weken via je bank laten terugboeken.</p></div></details>
                 <details><summary>Waar vind ik mijn facturen?</summary><div class="answer"><p>Onder <a href="account.html#betalingen">Mijn account → Betalingen</a> kun je al je facturen als PDF downloaden.</p></div></details>
                 <details><summary>Hoe werkt de welkomstkorting?</summary><div class="answer"><p>Nieuwe abonnees krijgen 25% korting op de eerste levering. De korting wordt automatisch verrekend.</p></div></details>
               </div>
@@ -146,18 +154,15 @@
           <h2>Even bijpraten?</h2>
           <p class="lead">Vragen, feedback of gewoon een koffieverhaal kwijt? We horen het graag.</p>
           <ul class="contact-list">
-            <li><span class="ic"><svg aria-hidden="true"><use href="#i-mail"/></svg></span><div><strong>E-mail</strong><a href="mailto:hallo@zwartwerkkoffie.nl">hallo@zwartwerkkoffie.nl</a></div></li>
-            <li><span class="ic"><svg aria-hidden="true"><use href="#i-chat"/></svg></span><div><strong>WhatsApp</strong><a href="https://wa.me/31600000000">06 00 00 00 00</a></div></li>
-            <li><span class="ic"><svg aria-hidden="true"><use href="#i-phone"/></svg></span><div><strong>Telefoon</strong><a href="tel:+31000000000">000 000 00 00</a></div></li>
-            <li><span class="ic"><svg aria-hidden="true"><use href="#i-pin"/></svg></span><div><strong>Branderij</strong><span>Straatnaam 1, 1234 AB Plaats</span></div></li>
+            <li><span class="ic"><svg aria-hidden="true"><use href="#i-mail"/></svg></span><div><strong>E-mail</strong><a href="mailto:info@zwartwerkkoffie.nl">info@zwartwerkkoffie.nl</a></div></li>
+            <li><span class="ic"><svg aria-hidden="true"><use href="#i-pin"/></svg></span><div><strong>Adres</strong><span>De Savornin Lohmanlaan 7<br>3741 TW Baarn</span></div></li>
+            <!-- Telefoon / WhatsApp: later toevoegen, bijv.
+            <li><span class="ic"><svg aria-hidden="true"><use href="#i-chat"/></svg></span><div><strong>WhatsApp</strong><a href="https://wa.me/316...">06 ...</a></div></li> -->
           </ul>
           <div class="panel">
-            <h3 style="display:flex;gap:10px;align-items:center"><svg aria-hidden="true" style="width:20px;height:20px;color:var(--copper)"><use href="#i-clock"/></svg> Bereikbaarheid</h3>
-            <table class="hours">
-              <tr><td>Maandag – vrijdag</td><td>09:00 – 17:00</td></tr>
-              <tr><td>Zaterdag</td><td>10:00 – 14:00</td></tr>
-              <tr><td>Zondag</td><td>Gesloten (we drinken koffie)</td></tr>
-            </table>
+            <h3 style="display:flex;gap:10px;align-items:center"><svg aria-hidden="true" style="width:20px;height:20px;color:var(--copper)"><use href="#i-clock"/></svg> Reactietijd</h3>
+            <p class="muted" style="margin:0">We beantwoorden je mail op werkdagen binnen één werkdag. Heb je een vraag over een levering? Zet dan je batchnummer erbij, dat staat op de achterkant van je zak.</p>
+            <p class="muted" style="margin:14px 0 0;font-size:.9rem">KvK 89513908 · btw NL004738412B27</p>
           </div>
         </div>
         <form id="contact-form" class="panel reveal" novalidate>
@@ -179,7 +184,8 @@
             <div class="field"><label class="lbl" for="c-msg">Bericht</label><textarea id="c-msg" name="message" data-validate="required"></textarea><span class="err">Wat wil je ons vertellen?</span></div>
           </div>
           <p class="form-msg" id="contact-msg" role="status"></p>
-          <button type="submit" class="btn">Versturen</button>
+          <button type="submit" class="btn">Versturen via e-mail</button>
+          <p class="muted" style="font-size:.85rem;margin:12px 0 0">Je mailprogramma opent met je bericht klaar om te versturen naar info@zwartwerkkoffie.nl.</p>
         </form>
       </div>
     </section>
@@ -191,17 +197,18 @@
         <div>
           <img class="footer-logo" src="assets/img/zwartwerk-logo.png" alt="Zwartwerk — koffie uit kleine oplage" loading="lazy">
           <span class="script">Van boon tot bijzonder verhaal.</span>
+          <!-- Social media: voeg hier later links toe, bijv.
           <div class="socials">
-            <a href="#" aria-label="Instagram"><svg aria-hidden="true"><use href="#i-instagram"/></svg></a>
-            <a href="#" aria-label="Facebook"><svg aria-hidden="true"><use href="#i-facebook"/></svg></a>
-          </div>
+            <a href="https://instagram.com/..." aria-label="Instagram"><svg aria-hidden="true"><use href="#i-instagram"/></svg></a>
+          </div> -->
         </div>
         <div>
           <h4>Zwartwerk</h4>
           <ul>
             <li><a href="index.html#abonnement">Abonnement</a></li>
             <li><a href="hoe-het-werkt.html">Hoe het werkt</a></li>
-            <li><a href="hoe-het-werkt.html#bewust">Onze keuzes</a></li>
+            <li><a href="hoe-het-werkt.html#herkomst">Herkomstlanden</a></li>
+            <li><a href="over-ons.html">Over ons</a></li>
             <li><a href="account.html">Mijn account</a></li>
           </ul>
         </div>
@@ -215,8 +222,14 @@
           </ul>
         </div>
         <div>
-          <h4>Verse verhalen</h4>
-          <p class="muted" style="font-size:.95rem;margin:0">Het verhaal achter elke nieuwe batch, in je inbox.</p>
+          <h4>Contact</h4>
+          <address class="footer-address">
+            Zwartwerk<br>
+            De Savornin Lohmanlaan 7<br>
+            3741 TW Baarn<br>
+            <a href="mailto:info@zwartwerkkoffie.nl">info@zwartwerkkoffie.nl</a>
+          </address>
+          <h4 style="margin-top:22px">Verse verhalen</h4>
           <form class="newsletter" novalidate>
             <label class="visually-hidden" for="nl-email">E-mailadres</label>
             <input id="nl-email" type="email" placeholder="jij@voorbeeld.nl" autocomplete="email">
@@ -225,8 +238,8 @@
         </div>
       </div>
       <div class="footer-bottom">
-        <span>© <span data-year>2026</span> Zwartwerk · www.zwartwerkkoffie.nl</span>
-        <span><a href="#">Algemene voorwaarden</a> · <a href="#">Privacy</a> · <a href="#">Cookies</a></span>
+        <span>© <span data-year>2026</span> Zwartwerk · KvK 89513908 · btw NL004738412B27</span>
+        <span><a href="algemene-voorwaarden.html">Algemene voorwaarden</a> · <a href="privacy.html">Privacy</a> · <a href="cookies.html">Cookies</a></span>
       </div>
     </div>
   </footer>

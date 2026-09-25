@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="nl" class="no-js">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Mijn account — Zwartwerk</title>
+  <meta name="description" content="Beheer je Zwartwerk koffieabonnement: leveringen, bonenpaspoort, facturen en gegevens.">
+  <meta name="robots" content="noindex">
+  <meta name="theme-color" content="#121110">
+  <meta property="og:title" content="Zwartwerk — Koffie uit kleine oplage">
+  <meta property="og:description" content="Elke maand andere bonen. Altijd vers gebrand. Nooit twee keer dezelfde.">
+  <meta property="og:image" content="assets/img/zakken.jpg">
+  <link rel="icon" type="image/png" href="assets/img/favicon.png">
+  <link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png">
+  <link rel="preload" href="assets/fonts/anton-400.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="assets/css/fonts.css">
+  <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+  <a class="visually-hidden" href="#main">Naar de inhoud</a>
+
+  <div class="announce">Eerste levering 25% korting · Gratis verzending · Altijd opzegbaar</div>
+
+  <header class="site-header">
+    <div class="wrap">
+      <a class="brand" href="index.html" aria-label="Zwartwerk — home">
+        <img src="assets/img/zwartwerk-wordmark.png" alt="Zwartwerk" width="167" height="30">
+      </a>
+      <button class="nav-toggle" aria-expanded="false" aria-controls="nav" aria-label="Menu"><svg aria-hidden="true"><use href="#i-menu"/></svg></button>
+      <nav class="nav" id="nav" aria-label="Hoofdmenu">
+        <a href="index.html#abonnement">Abonnement</a>
+        <a href="hoe-het-werkt.html">Hoe het werkt</a>
+        <a href="klantenservice.html">Klantenservice</a>
+        <a href="account.html" class="nav-account" aria-current="page"><svg aria-hidden="true"><use href="#i-user"/></svg><span data-account-label>Inloggen</span></a>
+        <a href="index.html#abonnement" class="btn">Start abonnement</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main">
+    <div id="account-root">
+
+      <!-- NIET INGELOGD -->
+      <div id="auth-view">
+        <section class="page-hero">
+          <div class="wrap">
+            <span class="kicker">Mijn account</span>
+            <h1>Welkom <span class="accent">terug</span></h1>
+            <span class="script">Je koffie, jouw regie.</span>
+            <p class="lead">Log in om je abonnement te beheren, leveringen te bekijken en je bonen te beoordelen.</p>
+          </div>
+        </section>
+        <section class="section">
+          <div class="wrap">
+            <div class="auth">
+              <form id="login-form" class="panel form-stack" novalidate>
+                <h2>Inloggen</h2>
+                <div class="field"><label class="lbl" for="l-email">E-mailadres</label><input id="l-email" name="email" type="email" autocomplete="email" data-validate="email"><span class="err">Vul een geldig e-mailadres in.</span></div>
+                <div class="field"><label class="lbl" for="l-pass">Wachtwoord</label><input id="l-pass" name="password" type="password" autocomplete="current-password" data-validate="required"><span class="err">Vul je wachtwoord in.</span></div>
+                <p class="form-msg" id="login-msg" role="status"></p>
+                <button class="btn btn--block" type="submit">Inloggen</button>
+                <a href="#" id="forgot-link" style="font-size:.95rem">Wachtwoord vergeten?</a>
+              </form>
+              <div class="panel form-stack">
+                <h2>Nog geen abonnement?</h2>
+                <p class="muted" style="margin:0">Je account wordt automatisch aangemaakt als je een abonnement afsluit. Daarin vind je:</p>
+                <ul class="check-list" style="margin:6px 0">
+                  <li><span><strong>Je volgende levering</strong> — en overslaan of pauzeren met één klik</span></li>
+                  <li><span><strong>Je abonnement</strong> — hoeveelheid, ritme en maling aanpassen</span></li>
+                  <li><span><strong>Je bonenpaspoort</strong> — alle batches, met herkomst en je eigen scores</span></li>
+                  <li><span><strong>Facturen en gegevens</strong> — alles overzichtelijk bij elkaar</span></li>
+                </ul>
+                <a class="btn btn--block" href="index.html#abonnement">Start abonnement</a>
+                <button class="btn btn--ghost btn--block" type="button" id="demo-login">Bekijk demo-account</button>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <!-- INGELOGD -->
+      <div id="dash-view" hidden>
+        <section class="section" style="padding-top:clamp(32px,5vw,56px)">
+          <div class="wrap account">
+            <nav class="acc-nav" aria-label="Accountmenu" role="tablist">
+              <div class="acc-user"><div class="avatar">?</div><div class="name"></div><div class="since"></div></div>
+              <button type="button" role="tab" data-tab="overzicht"><svg aria-hidden="true"><use href="#i-home"/></svg>Overzicht</button>
+              <button type="button" role="tab" data-tab="abonnement"><svg aria-hidden="true"><use href="#i-refresh"/></svg>Abonnement</button>
+              <button type="button" role="tab" data-tab="leveringen"><svg aria-hidden="true"><use href="#i-box"/></svg>Leveringen</button>
+              <button type="button" role="tab" data-tab="paspoort"><svg aria-hidden="true"><use href="#i-passport"/></svg>Bonenpaspoort</button>
+              <button type="button" role="tab" data-tab="betalingen"><svg aria-hidden="true"><use href="#i-receipt"/></svg>Betalingen</button>
+              <button type="button" role="tab" data-tab="gegevens"><svg aria-hidden="true"><use href="#i-settings"/></svg>Gegevens</button>
+              <div class="sep"></div>
+              <button type="button" id="logout-btn"><svg aria-hidden="true"><use href="#i-logout"/></svg>Uitloggen</button>
+            </nav>
+            <div>
+              <section class="acc-panel" id="tab-overzicht" role="tabpanel"></section>
+              <section class="acc-panel" id="tab-abonnement" role="tabpanel"></section>
+              <section class="acc-panel" id="tab-leveringen" role="tabpanel"></section>
+              <section class="acc-panel" id="tab-paspoort" role="tabpanel"></section>
+              <section class="acc-panel" id="tab-betalingen" role="tabpanel"></section>
+              <section class="acc-panel" id="tab-gegevens" role="tabpanel"></section>
+              <p class="demo-note">Hulp nodig? Kijk bij de <a href="klantenservice.html">klantenservice</a> of mail naar <a href="mailto:hallo@zwartwerkkoffie.nl">hallo@zwartwerkkoffie.nl</a>.</p>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap">
+      <div class="footer-grid">
+        <div>
+          <img class="footer-logo" src="assets/img/zwartwerk-logo.png" alt="Zwartwerk — koffie uit kleine oplage" loading="lazy">
+          <span class="script">Van boon tot bijzonder verhaal.</span>
+          <div class="socials">
+            <a href="#" aria-label="Instagram"><svg aria-hidden="true"><use href="#i-instagram"/></svg></a>
+            <a href="#" aria-label="Facebook"><svg aria-hidden="true"><use href="#i-facebook"/></svg></a>
+          </div>
+        </div>
+        <div>
+          <h4>Zwartwerk</h4>
+          <ul>
+            <li><a href="index.html#abonnement">Abonnement</a></li>
+            <li><a href="hoe-het-werkt.html">Hoe het werkt</a></li>
+            <li><a href="hoe-het-werkt.html#bewust">Onze keuzes</a></li>
+            <li><a href="account.html">Mijn account</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>Hulp</h4>
+          <ul>
+            <li><a href="klantenservice.html">Klantenservice</a></li>
+            <li><a href="klantenservice.html#faq">Veelgestelde vragen</a></li>
+            <li><a href="klantenservice.html#faq-bezorging">Bezorging</a></li>
+            <li><a href="klantenservice.html#contact">Contact</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>Verse verhalen</h4>
+          <p class="muted" style="font-size:.95rem;margin:0">Het verhaal achter elke nieuwe batch, in je inbox.</p>
+          <form class="newsletter" novalidate>
+            <label class="visually-hidden" for="nl-email">E-mailadres</label>
+            <input id="nl-email" type="email" placeholder="jij@voorbeeld.nl" autocomplete="email">
+            <button class="btn btn--small" type="submit">Aanmelden</button>
+          </form>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <span>© <span data-year>2026</span> Zwartwerk · www.zwartwerkkoffie.nl</span>
+        <span><a href="#">Algemene voorwaarden</a> · <a href="#">Privacy</a> · <a href="#">Cookies</a></span>
+      </div>
+    </div>
+  </footer>
+
+  <script src="assets/js/main.js"></script>
+</body>
+</html>

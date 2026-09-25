@@ -1,0 +1,25 @@
+# Zwartwerk — webserverinstellingen (Apache / LiteSpeed, standaard bij Vimexx/DirectAdmin)
+
+# Geen mappenoverzicht tonen
+Options -Indexes
+
+# Interne bestanden nooit via de browser
+<FilesMatch "\.(md|sql|sh|log|ini|lock|json)$">
+  <IfModule mod_authz_core.c>
+    Require all denied
+  </IfModule>
+</FilesMatch>
+RedirectMatch 404 /\.(git|github|claude)(/|$)
+
+<IfModule mod_headers.c>
+  Header always set X-Content-Type-Options "nosniff"
+  Header always set Referrer-Policy "strict-origin-when-cross-origin"
+  Header always set X-Frame-Options "SAMEORIGIN"
+</IfModule>
+
+# Altijd via https (zet eerst SSL aan in DirectAdmin, haal dan de # weg)
+# <IfModule mod_rewrite.c>
+#   RewriteEngine On
+#   RewriteCond %{HTTPS} !=on
+#   RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+# </IfModule>

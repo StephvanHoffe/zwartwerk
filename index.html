@@ -260,6 +260,7 @@
                   <div class="field half"><label class="lbl" for="f-email">E-mailadres</label><input id="f-email" name="email" type="email" autocomplete="email" data-validate="email"><span class="err">Vul een geldig e-mailadres in.</span></div>
                   <div class="field half"><label class="lbl" for="f-phone">Telefoon <span class="muted">(optioneel)</span></label><input id="f-phone" name="phone" type="tel" autocomplete="tel"></div>
                   <div class="field"><label class="lbl" for="f-pass">Kies een wachtwoord</label><input id="f-pass" name="password" type="password" autocomplete="new-password" data-validate="password"><span class="err">Minimaal 6 tekens.</span><span class="muted" style="font-size:.85rem">Hiermee log je in op je account om je abonnement te beheren.</span></div>
+                  <div class="field half"><label class="lbl" for="f-referral">Uitnodigingscode <span class="muted">(optioneel)</span></label><input id="f-referral" name="referral" type="text" autocomplete="off" placeholder="ZW-…" style="text-transform:uppercase"><p class="form-msg" id="referral-msg" role="status"></p></div>
                 </div>
               </fieldset>
 
@@ -291,7 +292,7 @@
               <hr class="rule">
               <dl>
                 <dt>Per levering</dt><dd id="sum-price">€ 29,00</dd>
-                <dt>Welkomstkorting</dt><dd class="discount" id="sum-discount">− € 7,25</dd>
+                <dt id="sum-discount-label">Welkomstkorting</dt><dd class="discount" id="sum-discount">− € 7,25</dd>
               </dl>
               <div class="total">
                 <span class="lbl" style="color:#6b5f52">Eerste levering</span>

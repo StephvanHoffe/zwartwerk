@@ -674,10 +674,12 @@ input::placeholder, textarea::placeholder { color: #6f665b; }
 /* --------------------------------------------------------------------------
    Account
    -------------------------------------------------------------------------- */
+.auth > * { min-width: 0; }
 .auth { max-width: 980px; margin-inline: auto; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
 @media (max-width: 800px) { .auth { grid-template-columns: 1fr; } }
 .auth .panel h2 { font-size: 2rem; }
 .form-stack { display: grid; gap: 14px; }
+.form-stack > .field { grid-column: auto; }
 .form-msg { font-size: 0.93rem; color: var(--danger); min-height: 1.2em; margin: 0; }
 .form-msg.ok { color: var(--ok); }
 

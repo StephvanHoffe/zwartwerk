@@ -38,7 +38,8 @@
     },
     pay: "iDEAL | Wero",
     email: "info@zwartwerkkoffie.nl",
-    welcomeDiscount: 0.25 // 25% korting op de eerste levering
+    welcomeDiscount: 0.25, // 25% korting op de eerste levering
+    referralDiscount: 0.5 // 50% korting op de eerste levering met een uitnodigingscode
   };
 
   var eur = new Intl.NumberFormat("nl-NL", { style: "currency", currency: "EUR" });
@@ -147,6 +148,40 @@
   function logout() { store.del(SESSION); }
 
   /* ------------------------------------------------------------------------
+     Server (PHP) — als die draait werken aanmelden, betalen en het account echt.
+     Zonder server (bijv. lokaal bekijken) valt alles terug op de demo in de browser.
+     ------------------------------------------------------------------------ */
+  var LIVE = false;
+  function api(path, body) {
+    var opts = { credentials: "same-origin", headers: { Accept: "application/json" } };
+    if (body) {
+      opts.method = "POST";
+      opts.headers["Content-Type"] = "application/json";
+      opts.headers["X-Zwartwerk"] = "1";
+      opts.body = JSON.stringify(body);
+    }
+    return fetch("api/" + path, opts).then(function (r) {
+      return r.json().catch(function () { return {}; }).then(function (data) {
+        if (!r.ok || data.ok === false) {
+          var err = new Error(data.error || "Er ging iets mis. Probeer het later opnieuw.");
+          err.status = r.status;
+          throw err;
+        }
+        return data;
+      });
+    });
+  }
+  var livePromise = api("ping.php").then(function (d) {
+    if (!d.live) return false;
+    LIVE = true;
+    Object.keys(d.prices || {}).forEach(function (k) { if (CONFIG.sizes[k]) CONFIG.sizes[k].price = d.prices[k]; });
+    if (typeof d.welcomeDiscount === "number") CONFIG.welcomeDiscount = d.welcomeDiscount;
+    if (typeof d.referralDiscount === "number") CONFIG.referralDiscount = d.referralDiscount;
+    if (typeof d.cancelDays === "number") CONFIG.cancelDays = d.cancelDays;
+    return true;
+  }).catch(function () { return false; });
+
+  /* ------------------------------------------------------------------------
      Datumhulpjes
      ------------------------------------------------------------------------ */
   function addDays(d, n) { var x = new Date(d); x.setDate(x.getDate() + n); return x; }
@@ -236,6 +271,9 @@
   $$("[data-account-label]").forEach(function (el) {
     el.textContent = acc0 ? "Hoi " + acc0.name.split(" ")[0] : "Inloggen";
   });
+  livePromise.then(function (live) {
+    if (live) $$("[data-account-label]").forEach(function (el) { el.textContent = "Mijn account"; });
+  });
 
   if ("IntersectionObserver" in window) {
     var io = new IntersectionObserver(function (entries) {
@@ -258,7 +296,9 @@
         input.focus();
         return;
       }
+      var email = input.value.trim();
       input.value = "";
+      if (LIVE) api("newsletter.php", { email: email }).catch(function () {});
       toast("Top! Je hoort van ons zodra er een nieuwe batch uit de brander komt.");
     });
   });
@@ -335,7 +375,9 @@
       var s = CONFIG.sizes[size];
       var f = CONFIG.freqs[freq];
       var price = s.price;
-      var firstPrice = price * (1 - CONFIG.welcomeDiscount);
+      var pct = referralOk ? CONFIG.referralDiscount : CONFIG.welcomeDiscount;
+      var firstPrice = Math.round(price * (1 - pct) * 100) / 100;
+      $("#sum-discount-label").textContent = referralOk ? "Uitnodigingskorting" : "Welkomstkorting";
       var monthly = price * f.perMonth;
 
       $("#sum-size").textContent = s.label;
@@ -350,8 +392,30 @@
       var note = $("#freq-note");
       if (note) note.hidden = f.perMonth < 2;
     }
+    // Uitnodigingscode (optioneel): 50% korting op de eerste levering
+    var referralOk = false;
+    var refInput = form.elements.referral;
+    var refMsg = $("#referral-msg");
+    function checkReferral() {
+      var code = refInput ? refInput.value.trim().toUpperCase() : "";
+      if (!code) { referralOk = false; refMsg.textContent = ""; update(); return; }
+      var check = LIVE
+        ? api("referral.php?code=" + encodeURIComponent(code)).then(function (d) { return d.valid; })
+        : Promise.resolve(/^ZW-[A-Z]{1,6}\d{3}$/.test(code));
+      check.then(function (valid) {
+        referralOk = valid;
+        refMsg.textContent = valid ? "Code geldig: 50% korting op je eerste levering!" : "Deze code kennen we niet.";
+        refMsg.className = "form-msg" + (valid ? " ok" : "");
+        update();
+      }).catch(function () {});
+    }
+    if (refInput) refInput.addEventListener("change", checkReferral);
+    var params0 = new URLSearchParams(location.search);
+    if (refInput && params0.get("code")) { refInput.value = params0.get("code"); checkReferral(); }
+
     form.addEventListener("change", update);
     update();
+    livePromise.then(update); // prijzen van de server
 
     form.addEventListener("submit", function (e) {
       e.preventDefault();
@@ -361,6 +425,25 @@
       }
       var fd = new FormData(form);
       var email = String(fd.get("email")).trim().toLowerCase();
+      if (LIVE) {
+        var btn = $(".summary button[type=submit]");
+        btn.disabled = true;
+        btn.textContent = "Even geduld…";
+        api("subscribe.php", {
+          size: readChoice(form, "size"), freq: readChoice(form, "freq"), roast: readChoice(form, "roast"),
+          firstname: fd.get("firstname"), lastname: fd.get("lastname"), email: email, phone: fd.get("phone"),
+          street: fd.get("street"), nr: fd.get("nr"), postcode: fd.get("postcode"), city: fd.get("city"),
+          password: fd.get("password"), referral: fd.get("referral") || "", newsletter: !!fd.get("newsletter"), terms: !!fd.get("terms")
+        }).then(function (d) {
+          btn.textContent = "Door naar iDEAL | Wero…";
+          location.href = d.checkoutUrl;
+        }).catch(function (err) {
+          btn.disabled = false;
+          btn.textContent = "Afrekenen met iDEAL | Wero";
+          toast(err.message);
+        });
+        return;
+      }
       var existing = getAccounts()[email];
       var acc = {
         name: String(fd.get("firstname")).trim() + " " + String(fd.get("lastname")).trim(),
@@ -546,12 +629,20 @@
   function initAccount() {
     var authView = $("#auth-view");
     var dashView = $("#dash-view");
+    var params = new URLSearchParams(location.search);
 
-    function show() {
+    function showDash(acc) {
+      authView.hidden = true;
+      dashView.hidden = false;
+      renderDashboard(acc);
+    }
+    function showAuth() {
+      authView.hidden = false;
+      dashView.hidden = true;
+    }
+    function showLocal() {
       var acc = currentAccount();
-      authView.hidden = !!acc;
-      dashView.hidden = !acc;
-      if (acc) renderDashboard(acc);
+      if (acc) showDash(acc); else showAuth();
     }
 
     // Inloggen
@@ -559,8 +650,15 @@
       e.preventDefault();
       var f = e.target;
       var msg = $("#login-msg");
+      msg.classList.remove("ok");
       if (!validateForm(f)) return;
       var email = f.elements.email.value.trim().toLowerCase();
+      if (LIVE) {
+        api("auth.php", { action: "login", email: email, password: f.elements.password.value })
+          .then(function (acc) { msg.textContent = ""; showDash(acc); window.scrollTo(0, 0); })
+          .catch(function (err) { msg.textContent = err.message; });
+        return;
+      }
       var acc = getAccounts()[email];
       if (email === "demo@zwartwerk.nl" && !acc) { acc = makeDemoAccount(); saveAccount(acc); }
       if (!acc || acc.password !== f.elements.password.value) {
@@ -569,27 +667,66 @@
       }
       msg.textContent = "";
       login(email);
-      show();
+      showLocal();
       window.scrollTo(0, 0);
     });
+    // Voorbeeld-account: altijd alleen in de browser, raakt de echte gegevens niet
     $("#demo-login").addEventListener("click", function () {
       var demo = makeDemoAccount();
+      demo.demo = true;
       saveAccount(demo);
       login(demo.email);
-      show();
+      showDash(demo);
       window.scrollTo(0, 0);
-      toast("Je bekijkt nu het demo-account.");
+      toast("Je bekijkt nu een voorbeeld-account.");
     });
     $("#forgot-link").addEventListener("click", function (e) {
       e.preventDefault();
       var email = $("#login-form").elements.email.value.trim();
-      $("#login-msg").classList.add("ok");
-      $("#login-msg").textContent = email
-        ? "Als " + email + " bij ons bekend is, ontvang je binnen een paar minuten een resetlink."
-        : "Vul eerst je e-mailadres in, dan sturen we je een resetlink.";
+      var msg = $("#login-msg");
+      msg.classList.add("ok");
+      if (!email) { msg.textContent = "Vul eerst je e-mailadres in, dan sturen we je een resetlink."; return; }
+      if (LIVE) api("auth.php", { action: "forgot", email: email }).catch(function () {});
+      msg.textContent = "Als " + email + " bij ons bekend is, ontvang je binnen een paar minuten een resetlink.";
     });
 
-    show();
+    livePromise.then(function (live) {
+      if (!live) { showLocal(); return; }
+      // Wachtwoord opnieuw instellen via de link uit de mail
+      if (params.get("reset")) {
+        showReset(params.get("reset"));
+        return;
+      }
+      api("account.php").then(function (acc) {
+        showDash(acc);
+        if (params.get("betaling") === "terug") {
+          toast(acc.sub && acc.sub.status === "nieuw" ? "We wachten nog op de bevestiging van je betaling…" : "Bedankt! Je betaling is gelukt.");
+          if (acc.sub && acc.sub.status === "nieuw") setTimeout(function () { api("account.php").then(renderDashboard).catch(function () {}); }, 4000);
+        } else if (params.get("betaling") === "rekening") {
+          toast("Bedankt! Zodra de betaling binnen is, schrijven we voortaan van je nieuwe rekening af.");
+        }
+        if (params.get("betaling") && history.replaceState) history.replaceState(null, "", "account.html" + location.hash);
+      }).catch(function (err) {
+        if (err.status === 401) showAuth(); else { showAuth(); toast(err.message); }
+      });
+    });
+
+    function showReset(token) {
+      showAuth();
+      var panel = $("#login-form");
+      panel.innerHTML = '<h2>Nieuw wachtwoord</h2><div class="field"><label class="lbl" for="r-pass">Kies een nieuw wachtwoord</label><input id="r-pass" name="password" type="password" autocomplete="new-password" data-validate="password"><span class="err">Minimaal 6 tekens.</span></div><p class="form-msg" id="reset-msg" role="status"></p><button class="btn btn--block" type="submit">Opslaan en inloggen</button>';
+      var f = panel.cloneNode(true);
+      panel.parentNode.replaceChild(f, panel);
+      f.addEventListener("submit", function (e) {
+        e.preventDefault();
+        if (!validateForm(f)) return;
+        api("auth.php", { action: "reset", token: token, password: f.elements.password.value }).then(function (acc) {
+          if (history.replaceState) history.replaceState(null, "", "account.html");
+          showDash(acc);
+          toast("Je nieuwe wachtwoord is opgeslagen.");
+        }).catch(function (err) { $("#reset-msg").textContent = err.message; });
+      });
+    }
   }
 
   function renderDashboard(acc) {
@@ -600,8 +737,25 @@
     var next = new Date(sub.nextDelivery);
     var firstName = acc.name.split(" ")[0];
 
-    // Leveringen die al geweest zouden zijn: niet automatisch toevoegen (prototype)
+    var live = LIVE && acc.live && !acc.demo;
     function persist() { saveAccount(acc); }
+    /* Voert een actie uit: op de server (live) of lokaal in het voorbeeld-account. */
+    function commit(action, payload, localFn, okMsg, after) {
+      function done(fresh) {
+        renderDashboard(fresh);
+        if (after) after(fresh);
+        if (okMsg) toast(typeof okMsg === "function" ? okMsg(fresh) : okMsg);
+      }
+      if (live) {
+        return api("account.php", Object.assign({ action: action }, payload || {})).then(done).catch(function (err) { toast(err.message); });
+      }
+      localFn();
+      persist();
+      done(acc);
+    }
+    function goCheckout(action) {
+      api("account.php", { action: action }).then(function (d) { location.href = d.checkoutUrl; }).catch(function (err) { toast(err.message); });
+    }
 
     // ---- zijbalk
     $(".acc-user .avatar", root).textContent = firstName.charAt(0).toUpperCase();
@@ -628,7 +782,8 @@
 
     $("#logout-btn").onclick = function () {
       logout();
-      location.href = "account.html";
+      if (live) api("auth.php", { action: "logout" }).then(function () { location.href = "account.html"; }).catch(function () { location.href = "account.html"; });
+      else location.href = "account.html";
     };
 
     // ---- OVERZICHT
@@ -636,7 +791,9 @@
       ? '<span class="chip chip--ok">Actief</span>'
       : sub.status === "gepauzeerd"
         ? '<span class="chip chip--warn">Gepauzeerd</span>'
-        : '<span class="chip">Opgezegd</span>';
+        : sub.status === "nieuw"
+          ? '<span class="chip chip--warn">Wacht op betaling</span>'
+          : '<span class="chip">Opgezegd</span>';
 
     var days = Math.max(0, Math.ceil((startOfDay(next) - startOfDay(new Date())) / 864e5));
     var allBatches = batches(acc);
@@ -650,7 +807,13 @@
     var bagsShort = sub.size === "500" ? "2×250g" : "250g";
 
     var nextBlock;
-    if (sub.status === "opgezegd") {
+    if (sub.status === "nieuw") {
+      nextBlock = '<h3>Je abonnement ' + statusChip + '</h3><div class="big">Bijna klaar</div><p class="muted" style="margin-top:10px">' +
+        (acc.pendingPayment && acc.pendingPayment.status === "open"
+          ? "We hebben je betaling nog niet ontvangen. Heb je net betaald? Dan duurt het soms even. Ververs de pagina over een minuutje."
+          : "Je eerste betaling is niet afgerond. Rond hem alsnog af, dan gaan we direct voor je branden.") +
+        '</p><div class="actions"><button class="btn" data-action="retry-payment">Betalen met iDEAL | Wero</button></div>';
+    } else if (sub.status === "opgezegd") {
       nextBlock = '<h3>Je abonnement</h3><div class="big">Opgezegd</div><p class="muted" style="margin-top:10px">Jammer dat je gaat! Je kunt op elk moment weer instappen — je bonenhistorie bewaren we, zodat je geen smaak twee keer krijgt.</p>' + (sub.lastDelivery && new Date(sub.lastDelivery) >= today ? '<p class="muted">Je laatste levering komt nog op ' + esc(dateFmt.format(new Date(sub.lastDelivery))) + '.</p>' : '') + '<div class="actions"><button class="btn" data-action="restart">Abonnement hervatten</button></div>';
     } else if (sub.status === "gepauzeerd") {
       nextBlock = '<h3>Volgende levering ' + statusChip + '</h3><div class="big">' + esc(capitalize(dateFmt.format(next))) + '</div><p class="muted" style="margin-top:10px">Je abonnement staat op pauze. Daarna gaan we gewoon verder met een nieuwe verrassing.</p><div class="actions"><button class="btn" data-action="resume">Nu hervatten</button></div>';
@@ -664,6 +827,7 @@
         '<p class="muted" style="margin:6px 0 0;font-size:.9rem">' + (locked
           ? "Deze levering wordt al voor je gebrand. Wijzigingen gelden vanaf " + esc(dateFmt.format(nextAfter(sub, next))) + "."
           : "Wijzigen, overslaan of opzeggen kan nog tot en met " + esc(dateFmt.format(deadlineFor(next))) + ".") + "</p>" +
+        (sub.pausedUntil ? '<p class="muted" style="margin:6px 0 0;font-size:.9rem"><strong>Daarna gepauzeerd</strong> tot ' + esc(dateFmt.format(new Date(sub.pausedUntil))) + '. <button class="link-arrow" style="background:none;border:0;padding:0;cursor:pointer;color:var(--copper-deep)" data-action="resume">Pauze opheffen</button></p>' : "") +
         '<div class="actions"><button class="btn btn--small" data-action="skip">' + icon("skip") + ' Overslaan</button><button class="btn btn--ghost btn--small" data-action="pause">' + icon("pause") + ' Pauzeren</button><button class="btn btn--ghost btn--small" data-goto="abonnement">' + icon("edit") + " Wijzigen</button></div>";
     }
 
@@ -712,24 +876,21 @@
       "</form>" +
       '<div class="tiles" style="margin-top:16px">' +
       '<div class="tile"><h3>Even geen koffie nodig?</h3><p class="muted">Op vakantie of nog genoeg in huis? Sla een levering over of pauzeer tot 3 maanden. Kost niks.</p><div class="actions">' +
-      (sub.status === "opgezegd" ? '<button class="btn btn--small" data-action="restart">Hervatten</button>' : paused ? '<button class="btn btn--small" data-action="resume">Hervatten</button>' : '<button class="btn btn--small" data-action="skip">' + icon("skip") + ' Volgende overslaan</button><button class="btn btn--ghost btn--small" data-action="pause">' + icon("pause") + " Pauzeren</button>") +
+      (sub.status === "nieuw" ? '<span class="muted">Kan zodra je eerste betaling binnen is.</span>' : sub.status === "opgezegd" ? '<button class="btn btn--small" data-action="restart">Hervatten</button>' : paused ? '<button class="btn btn--small" data-action="resume">Hervatten</button>' : '<button class="btn btn--small" data-action="skip">' + icon("skip") + ' Volgende overslaan</button><button class="btn btn--ghost btn--small" data-action="pause">' + icon("pause") + " Pauzeren</button>") +
       "</div></div>" +
       '<div class="tile"><h3>Opzeggen</h3><p class="muted">Geen vaste looptijd, geen kleine lettertjes. Opzeggen kan tot 7 dagen voor je volgende levering.</p><div class="actions">' +
-      (sub.status === "opgezegd" ? '<span class="chip">Opgezegd</span>' : '<button class="btn btn--danger btn--small" data-action="cancel">Abonnement opzeggen</button>') +
+      (sub.status === "opgezegd" ? '<span class="chip">Opgezegd</span>' : sub.status === "nieuw" ? "" : '<button class="btn btn--danger btn--small" data-action="cancel">Abonnement opzeggen</button>') +
       "</div></div></div>";
 
     $("#plan-form").addEventListener("submit", function (e) {
       e.preventDefault();
       var f = e.target;
-      sub.size = readChoice(f, "size");
-      sub.freq = readChoice(f, "freq");
-      sub.roast = f.elements.roast.value;
-      sub.note = f.elements.note.value.trim();
-      persist();
-      renderDashboard(acc);
-      toast(locked
+      var plan = { size: readChoice(f, "size"), freq: readChoice(f, "freq"), roast: f.elements.roast.value, note: f.elements.note.value.trim() };
+      commit("update-plan", plan, function () {
+        sub.size = plan.size; sub.freq = plan.freq; sub.roast = plan.roast; sub.note = plan.note;
+      }, locked
         ? "Opgeslagen! Je levering van " + dateFmt.format(next) + " wordt al gebrand, dus dit geldt vanaf " + dateFmt.format(nextAfter(sub, next)) + "."
-        : "Opgeslagen! Geldt vanaf je volgende levering.");
+        : "Opgeslagen! Geldt vanaf je volgende levering.", function () { openTab("abonnement"); });
     });
 
     // ---- LEVERINGEN
@@ -754,7 +915,8 @@
       (acc.deliveries.length
         ? '<div class="table-wrap"><table class="table"><thead><tr><th>Datum</th><th>Batch</th><th>Herkomst</th><th>Inhoud</th><th>Status</th></tr></thead><tbody>' +
         acc.deliveries.slice().reverse().map(function (d) {
-          return "<tr><td>" + dateShort.format(new Date(d.date)) + "</td><td>" + esc(d.batch) + "</td><td>" + esc(d.country) + " · " + esc(d.region) + "</td><td>" + esc(CONFIG.sizes[d.size].bags) + " hele bonen" + '</td><td><span class="chip chip--ok">Bezorgd</span></td></tr>';
+          return "<tr><td>" + dateShort.format(new Date(d.date)) + "</td><td>" + esc(d.batch) + "</td><td>" + esc(d.country) + " · " + esc(d.region) + "</td><td>" + esc(CONFIG.sizes[d.size].bags) + " hele bonen" + '</td><td><span class="chip chip--ok">Bezorgd</span>' +
+            (d.tracking && d.tracking.length ? d.tracking.map(function (t, i) { return ' <a href="' + esc(t) + '" target="_blank" rel="noopener">Volg' + (d.tracking.length > 1 ? " " + (i + 1) : "") + "</a>"; }).join("") : "") + '</td></tr>';
         }).join("") + "</tbody></table></div>"
         : '<p class="muted">Nog geen leveringen. Je eerste zak is in de maak!</p>') +
       '<p class="muted" style="margin-top:20px;font-size:.93rem">Iets mis met een levering? <a href="klantenservice.html#contact">Laat het ons weten</a>, dan lossen we het op.</p>';
@@ -782,12 +944,12 @@
     $("#tab-betalingen").innerHTML =
       '<span class="kicker">Betalingen</span><h2>Betalingen & facturen</h2>' +
       '<p class="lead">We rekenen pas af als je zak onderweg is. Alle bedragen zijn inclusief btw en verzending.</p>' +
-      '<div class="tiles" style="margin-bottom:24px"><div class="tile"><h3>Betaalmethode</h3><div class="big" style="font-size:2rem">' + esc(CONFIG.pay) + '</div><p class="muted" style="margin:8px 0 0">Via Mollie. Je eerste betaling deed je met iDEAL | Wero; volgende leveringen schrijven we automatisch af van dezelfde rekening (NL•• •••• •••• •••• 42).</p><div class="actions"><button class="btn btn--ghost btn--small" data-action="change-pay">Andere rekening koppelen</button></div></div>' +
+      '<div class="tiles" style="margin-bottom:24px"><div class="tile"><h3>Betaalmethode</h3><div class="big" style="font-size:2rem">' + esc(CONFIG.pay) + '</div><p class="muted" style="margin:8px 0 0">Via Mollie. Je eerste betaling deed je met iDEAL | Wero; volgende leveringen schrijven we automatisch af van dezelfde rekening' + (sub.account ? " (" + esc(sub.account) + ")" : live ? "" : " (NL•• •••• •••• •••• 42)") + '.</p>' + (acc.credit ? '<p class=\"muted\" style=\"margin:8px 0 0\">Tegoed: <strong>' + eur.format(acc.credit) + '</strong>, verrekenen we met je volgende levering.</p>' : '') + '<div class="actions"><button class="btn btn--ghost btn--small" data-action="change-pay">Andere rekening koppelen</button></div></div>' +
       '<div class="tile"><h3>Totaal besteed</h3><div class="big">' + eur.format(acc.deliveries.reduce(function (s, d) { return s + d.price; }, 0)) + '</div><p class="muted" style="margin:8px 0 0">Aan ' + acc.deliveries.length + " leveringen vers gebrande koffie, verzending inbegrepen.</p></div></div>" +
       (invoices.length
         ? '<div class="table-wrap"><table class="table"><thead><tr><th>Factuur</th><th>Datum</th><th>Omschrijving</th><th>Bedrag</th><th>Status</th><th></th></tr></thead><tbody>' +
         invoices.map(function (d, i) {
-          return "<tr><td>F" + (2400 + invoices.length - i) + "</td><td>" + dateShort.format(new Date(d.date)) + "</td><td>" + esc(CONFIG.sizes[d.size].label) + " koffie · batch " + esc(d.batch) + "</td><td>" + eur.format(d.price) + '</td><td><span class="chip chip--ok">Betaald</span></td><td><a href="#" data-action="invoice">PDF</a></td></tr>';
+          return "<tr><td>F" + (2400 + invoices.length - i) + "</td><td>" + dateShort.format(new Date(d.date)) + "</td><td>" + esc(CONFIG.sizes[d.size].label) + " koffie · batch " + esc(d.batch) + "</td><td>" + eur.format(d.price) + '</td><td><span class="chip chip--ok">Betaald</span></td><td>' + (live && d.invoice ? '<a href="api/factuur.php?id=' + d.invoice + '" target="_blank" rel="noopener">Factuur</a>' : '<a href="#" data-action="invoice">PDF</a>') + '</td></tr>';
         }).join("") + "</tbody></table></div>"
         : '<p class="muted">Nog geen facturen.</p>');
 
@@ -814,19 +976,25 @@
       e.preventDefault();
       var f = e.target;
       if (!validateForm(f)) return;
-      acc.name = f.elements.name.value.trim();
-      acc.phone = f.elements.phone.value.trim();
-      acc.address = { street: f.elements.street.value.trim(), nr: f.elements.nr.value.trim(), postcode: f.elements.postcode.value.trim().toUpperCase(), city: f.elements.city.value.trim() };
-      acc.newsletter = f.elements.newsletter.checked;
-      persist();
-      renderDashboard(acc);
-      toast("Je gegevens zijn bijgewerkt.");
+      var el = f.elements;
+      var d = { name: el.name.value.trim(), phone: el.phone.value.trim(), street: el.street.value.trim(), nr: el.nr.value.trim(),
+        postcode: el.postcode.value.trim().toUpperCase(), city: el.city.value.trim(), newsletter: el.newsletter.checked };
+      commit("update-details", d, function () {
+        acc.name = d.name; acc.phone = d.phone; acc.newsletter = d.newsletter;
+        acc.address = { street: d.street, nr: d.nr, postcode: d.postcode, city: d.city };
+      }, "Je gegevens zijn bijgewerkt.", function () { openTab("gegevens"); });
     });
     $("#pw-form").addEventListener("submit", function (e) {
       e.preventDefault();
       var f = e.target;
       var msg = $("#pw-msg");
       if (!validateForm(f)) return;
+      if (live) {
+        api("account.php", { action: "change-password", old: f.elements.old.value, "new": f.elements["new"].value }).then(function () {
+          f.reset(); msg.classList.add("ok"); msg.textContent = "Wachtwoord gewijzigd.";
+        }).catch(function (err) { msg.classList.remove("ok"); msg.textContent = err.message; });
+        return;
+      }
       if (f.elements.old.value !== acc.password) { msg.classList.remove("ok"); msg.textContent = "Je huidige wachtwoord klopt niet."; return; }
       acc.password = f.elements.new.value;
       persist();
@@ -839,7 +1007,12 @@
     root.onclick = function (e) {
       var rate = e.target.closest("[data-rate]");
       if (rate) {
-        var p = rate.getAttribute("data-rate").split(":");
+        var raw = rate.getAttribute("data-rate");
+        var p = [raw.slice(0, raw.lastIndexOf(":")), raw.slice(raw.lastIndexOf(":") + 1)];
+        if (live) {
+          commit("rate", { batch: p[0], rating: +p[1] }, null, +p[1] >= 4 ? "Genoteerd! We zoeken meer in deze richting." : "Dank! Daar houden we rekening mee.", function () { openTab("paspoort"); });
+          return;
+        }
         acc.deliveries.forEach(function (d) { if (d.batch === p[0]) d.rating = +p[1]; });
         persist();
         renderDashboard(acc);
@@ -857,7 +1030,11 @@
       var btn = e.target.closest("[data-action]");
       if (!btn) return;
       var action = btn.getAttribute("data-action");
-      if (action === "invoice") { e.preventDefault(); toast("In de live-versie download je hier je PDF-factuur."); return; }
+      if (action === "invoice") {
+        if (!live) { e.preventDefault(); toast("In het voorbeeld-account zijn geen echte facturen."); }
+        return;
+      }
+      if (action === "retry-payment") { goCheckout("retry-payment"); return; }
       if (action === "copy-ref") {
         var input = btn.parentNode.querySelector("input");
         if (navigator.clipboard) navigator.clipboard.writeText(input.value).catch(function () {});
@@ -873,24 +1050,32 @@
           (locked ? "Je levering van " + dateFmt.format(next) + " wordt al voor je gebrand en komt gewoon. " : "") +
           "We slaan de levering van " + dateFmt.format(target) + " over. De zak daarna komt op " + dateFmt.format(after) + ".",
           "Ja, overslaan", function () {
-            if (!locked) sub.nextDelivery = after.toISOString();
-            else (sub.skipped = sub.skipped || []).push(target.toISOString());
-            persist(); renderDashboard(acc); toast("Levering overgeslagen.");
+            commit("skip", {}, function () {
+              if (!locked) sub.nextDelivery = after.toISOString();
+              else (sub.skipped = sub.skipped || []).push(target.toISOString());
+            }, "Levering overgeslagen.");
           });
         return;
       }
       if (action === "pause") { pauseModal(); return; }
+      if (action === "resume" && sub.status === "actief" && sub.pausedUntil) {
+        commit("resume", {}, function () {
+          sub.skipped = (sub.skipped || []).filter(function (x) { return new Date(x) <= next; });
+          sub.pausedUntil = null;
+        }, "Pauze opgeheven. We leveren weer volgens je gewone ritme.");
+        return;
+      }
       if (action === "resume" || action === "restart") {
-        sub.status = "actief";
-        sub.pausedUntil = null;
-        sub.lastDelivery = null;
-        var earliest = firstDeliveryDate();
-        if (action === "restart" || new Date(sub.nextDelivery) < earliest) {
-          if (action === "restart") sub.anchor = earliest.toISOString();
-          sub.nextDelivery = schedule(sub, earliest, 1)[0].date.toISOString();
-        }
-        persist(); renderDashboard(acc);
-        toast(action === "restart" ? "Welkom terug! Je volgende verrassing is onderweg." : "Hervat! We branden weer voor je.");
+        commit(action, {}, function () {
+          sub.status = "actief";
+          sub.pausedUntil = null;
+          sub.lastDelivery = null;
+          var earliest = firstDeliveryDate();
+          if (action === "restart" || new Date(sub.nextDelivery) < earliest) {
+            if (action === "restart") sub.anchor = earliest.toISOString();
+            sub.nextDelivery = schedule(sub, earliest, 1)[0].date.toISOString();
+          }
+        }, action === "restart" ? "Welkom terug! Je volgende verrassing is onderweg." : "Hervat! We branden weer voor je.");
         return;
       }
       if (action === "cancel") { cancelModal(); return; }
@@ -903,28 +1088,35 @@
     }
     function pauseModal() {
       var from = locked ? nextAfter(sub, next) : next; // eerste levering die nog gepauzeerd kan worden
+      // Pauze van m maanden = de leveringen van m maanden overslaan
+      function resumeAfterPause(m) {
+        var n = m * freq.perMonth;
+        return schedule(sub, from, n + 1)[n].date;
+      }
       var d = modal('<h2>Abonnement pauzeren</h2><p class="muted">Hoe lang wil je pauzeren? Je kunt altijd eerder hervatten.' + (locked ? " Je levering van " + esc(dateFmt.format(next)) + " wordt al gebrand en komt nog." : "") + '</p><div class="options" style="margin-bottom:8px">' +
         [1, 2, 3].map(function (m, i) {
-          var resume = schedule(sub, addMonths(from, m), 1)[0].date;
+          var resume = resumeAfterPause(m);
           return '<label class="option"><input type="radio" name="months" value="' + m + '"' + (i === 0 ? " checked" : "") + '><span class="card"><span class="title small">' + m + " " + (m === 1 ? "maand" : "maanden") + '</span><span class="sub">Eerstvolgende levering: ' + esc(dateFmt.format(resume)) + "</span></span></label>";
         }).join("") +
         '</div><div class="actions"><button class="btn btn--ghost" value="cancel">Terug</button><button class="btn" value="ok">Pauzeren</button></div>');
       d.addEventListener("close", function () {
         if (d.returnValue !== "ok") return;
         var m = +readChoice(d, "months");
-        var resume = schedule(sub, addMonths(from, m), 1)[0].date;
-        if (locked) {
-          // de levering die al gebrand wordt gaat nog door; daarna pauze
+        var resume = resumeAfterPause(m);
+        commit("pause", { months: m }, function () {
+          if (locked) {
+            // de levering die al gebrand wordt gaat nog door; daarna pauze
+            var extra = schedule(sub, addDays(next, 1), 12).filter(function (u) { return u.date < resume; });
+            sub.pausedUntil = resume.toISOString();
+            sub.skipped = (sub.skipped || []).concat(extra.map(function (u) { return u.date.toISOString(); }));
+            return;
+          }
+          sub.status = "gepauzeerd";
           sub.pausedUntil = resume.toISOString();
-          (sub.skipped = sub.skipped || []);
-          schedule(sub, addDays(next, 1), 12).forEach(function (u) { if (u.date < resume) sub.skipped.push(u.date.toISOString()); });
-          persist(); renderDashboard(acc); toast("Na je levering van " + dateFmt.format(next) + " pauzeren we tot " + dateFmt.format(resume) + ".");
-          return;
-        }
-        sub.status = "gepauzeerd";
-        sub.pausedUntil = resume.toISOString();
-        sub.nextDelivery = resume.toISOString();
-        persist(); renderDashboard(acc); toast("Gepauzeerd. Je volgende levering is op " + dateFmt.format(resume) + ".");
+          sub.nextDelivery = resume.toISOString();
+        }, locked
+          ? "Na je levering van " + dateFmt.format(next) + " pauzeren we tot " + dateFmt.format(resume) + "."
+          : "Gepauzeerd. Je volgende levering is op " + dateFmt.format(resume) + ".");
       });
     }
     function cancelModal() {
@@ -937,17 +1129,21 @@
       d.addEventListener("close", function () {
         if (d.returnValue === "pause") { pauseModal(); return; }
         if (d.returnValue !== "ok") return;
-        sub.status = "opgezegd";
-        sub.lastDelivery = locked ? next.toISOString() : null;
-        persist(); renderDashboard(acc); openTab("abonnement"); toast("Je abonnement is opgezegd. Je bent altijd welkom terug.");
+        var reason = d.querySelector("#cancel-reason").value;
+        commit("cancel", { reason: reason }, function () {
+          sub.status = "opgezegd";
+          sub.lastDelivery = locked ? next.toISOString() : null;
+        }, "Je abonnement is opgezegd. Je bent altijd welkom terug.", function () { openTab("abonnement"); });
       });
     }
     function payModal() {
       var d = modal('<h2>Andere rekening koppelen</h2><p class="muted">Je gaat naar de beveiligde betaalomgeving van Mollie. Daar doe je een verificatiebetaling van € 0,01 met iDEAL | Wero vanaf je nieuwe rekening. Volgende leveringen schrijven we daarna van die rekening af.</p>' +
-        '<p class="demo-note">Prototype: de koppeling met Mollie wordt actief zodra de site live gaat.</p><div class="actions"><button class="btn btn--ghost" value="cancel">Terug</button><button class="btn" value="ok">Naar Mollie</button></div>');
+        (live ? "" : '<p class="demo-note">Dit is een voorbeeld-account: hier wordt niets gekoppeld.</p>') +
+        '<div class="actions"><button class="btn btn--ghost" value="cancel">Terug</button><button class="btn" value="ok">Naar Mollie</button></div>');
       d.addEventListener("close", function () {
         if (d.returnValue !== "ok") return;
-        toast("In de live-versie ga je nu naar Mollie.");
+        if (live) goCheckout("change-bank");
+        else toast("In het voorbeeld-account wordt niets gekoppeld.");
       });
     }
   }

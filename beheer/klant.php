@@ -38,7 +38,7 @@ if (is_post()) {
                 break;
             case 'plan':
                 Subscriptions::action($id, 'update-plan', [
-                    'size' => $_POST['size'] ?? '', 'freq' => $_POST['freq'] ?? '', 'roast' => $_POST['roast'] ?? '', 'note' => $_POST['note'] ?? '',
+                    'size' => $_POST['size'] ?? '', 'freq' => $_POST['freq'] ?? '',
                 ]);
                 flash('Abonnement bijgewerkt.');
                 break;
@@ -120,7 +120,7 @@ layout_start($user['first_name'] . ' ' . $user['last_name'], 'klanten');
   <div class="panel">
     <h3>Abonnement</h3>
     <?php if ($sub): ?>
-      <p><strong><?= $sub['size'] === '500' ? '500 gram (2 zakken)' : '250 gram (1 zak)' ?></strong>, <?= $sub['freq'] === '2m' ? '2× per maand' : '1× per maand' ?>, smaak: <?= e($sub['roast']) ?><br>
+      <p><strong><?= $sub['size'] === '500' ? '500 gram (2 zakken)' : '250 gram (1 zak)' ?></strong>, <?= $sub['freq'] === '2m' ? '2× per maand' : '1× per maand' ?>, hele bonen<br>
         <?php if ($sub['status'] === 'opgezegd'): ?>
           Opgezegd op <?= e(nl_date(substr((string) $sub['cancelled_at'], 0, 10))) ?><?= $sub['last_delivery'] ? ', laatste levering ' . e(nl_date($sub['last_delivery'])) : '' ?>.
           <?= $sub['cancel_reason'] ? '<br><span class="muted">Reden: ' . e($sub['cancel_reason']) . '</span>' : '' ?>
@@ -137,8 +137,6 @@ layout_start($user['first_name'] . ' ' . $user['last_name'], 'klanten');
         <?= csrf_field() ?><input type="hidden" name="id" value="<?= $id ?>"><input type="hidden" name="action" value="plan">
         <div><label>Hoeveelheid</label><select name="size"><option value="250"<?= $sub['size'] === '250' ? ' selected' : '' ?>>250 gram</option><option value="500"<?= $sub['size'] === '500' ? ' selected' : '' ?>>500 gram</option></select></div>
         <div><label>Ritme</label><select name="freq"><option value="1m"<?= $sub['freq'] === '1m' ? ' selected' : '' ?>>1× per maand</option><option value="2m"<?= $sub['freq'] === '2m' ? ' selected' : '' ?>>2× per maand</option></select></div>
-        <div><label>Smaakvoorkeur</label><select name="roast"><?php foreach (Subscriptions::ROASTS as $r): ?><option<?= $sub['roast'] === $r ? ' selected' : '' ?>><?= e($r) ?></option><?php endforeach; ?></select></div>
-        <div class="full"><label>Notitie van de klant</label><textarea name="note" style="min-height:60px"><?= e($sub['note']) ?></textarea></div>
         <div class="full"><button class="btn btn--small">Abonnement opslaan</button></div>
       </form>
 

@@ -313,7 +313,9 @@ final class Subscriptions
                 if (in_array($in['roast'] ?? '', self::ROASTS, true)) {
                     $sub['roast'] = $in['roast'];
                 }
-                $sub['note'] = mb_substr(trim((string) ($in['note'] ?? '')), 0, 1000);
+                if (array_key_exists('note', $in)) {
+                    $sub['note'] = mb_substr(trim((string) $in['note']), 0, 1000);
+                }
                 if (in_array($in['freq'] ?? '', self::FREQS, true) && $in['freq'] !== $sub['freq']) {
                     $sub['freq'] = $in['freq'];
                     // De levering die al gebrand wordt blijft staan; anders de eerstvolgende datum in het nieuwe ritme

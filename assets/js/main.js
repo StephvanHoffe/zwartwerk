@@ -376,7 +376,6 @@
       var size = readChoice(form, "size");
       var freq = readChoice(form, "freq");
       var grind = "bonen";
-      var roast = readChoice(form, "roast");
       var s = CONFIG.sizes[size];
       var f = CONFIG.freqs[freq];
       var price = s.price;
@@ -388,7 +387,6 @@
       $("#sum-size").textContent = s.label;
       $("#sum-freq").textContent = f.label;
       $("#sum-grind").textContent = CONFIG.grinds[grind];
-      $("#sum-roast").textContent = CONFIG.roasts[roast];
       $("#sum-price").textContent = eur.format(price);
       $("#sum-discount").textContent = "− " + eur.format(price - firstPrice);
       $("#sum-first").textContent = eur.format(firstPrice);
@@ -435,7 +433,7 @@
         btn.disabled = true;
         btn.textContent = "Even geduld…";
         api("subscribe.php", {
-          size: readChoice(form, "size"), freq: readChoice(form, "freq"), roast: readChoice(form, "roast"),
+          size: readChoice(form, "size"), freq: readChoice(form, "freq"),
           firstname: fd.get("firstname"), lastname: fd.get("lastname"), email: email, phone: fd.get("phone"),
           street: fd.get("street"), nr: fd.get("nr"), postcode: fd.get("postcode"), city: fd.get("city"),
           password: fd.get("password"), referral: fd.get("referral") || "", newsletter: !!fd.get("newsletter"), terms: !!fd.get("terms")
@@ -467,7 +465,7 @@
           size: readChoice(form, "size"),
           freq: readChoice(form, "freq"),
           grind: "bonen",
-          roast: readChoice(form, "roast"),
+          roast: "verras",
           pay: "ideal-wero",
           status: "actief",
           pausedUntil: null,
@@ -580,7 +578,7 @@
     var next = firstDeliveryDate(10);
     var sub = {
       size: "500", freq: "2m", grind: "bonen", roast: "verras", pay: "ideal-wero",
-      status: "actief", pausedUntil: null, note: "Liever niet te zuur.",
+      status: "actief", pausedUntil: null, note: "",
       anchor: addMonths(next, -4).toISOString(), nextDelivery: next.toISOString()
     };
     var ratings = [5, 4, 0, 0];
@@ -734,6 +732,169 @@
     }
   }
 
+  /* ------------------------------------------------------------------------
+     Koffiegordel-kaart in het bonenpaspoort
+     Landen die je geproefd hebt kleuren oranje. Klik op een land (of op het land
+     in een smaakkaart) om alleen de smaken van daar te zien.
+     ------------------------------------------------------------------------ */
+  var KAART_ALIAS = {
+    "dr-congo": "congo", "democratische-republiek-congo": "congo", "congo-kinshasa": "congo",
+    brazil: "brazilie", ethiopia: "ethiopie", kenya: "kenia", uganda: "oeganda", yemen: "jemen",
+    indonesia: "indonesie", "papua-new-guinea": "papoea-nieuw-guinea", "papoea-nieuw-guinea": "papoea-nieuw-guinea"
+  };
+  var kaartSelectie = null;
+  function countryKey(name) {
+    var k = String(name || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z]+/g, "-").replace(/^-+|-+$/g, "");
+    return KAART_ALIAS[k] || k;
+  }
+  function kaartData() { return window.KHOFFIE_KAART || null; }
+  function kaartTotal() { var K = kaartData(); return K ? K.countries.length : 12; }
+  function kaartCountry(key) {
+    var K = kaartData();
+    if (!K) return null;
+    for (var i = 0; i < K.countries.length; i++) if (K.countries[i].key === key) return K.countries[i];
+    return null;
+  }
+  // Samenvatting per land: aantal smaken en gemiddelde score
+  function kaartStats(batches) {
+    var st = {};
+    batches.forEach(function (d) {
+      var k = countryKey(d.country);
+      st[k] = st[k] || { name: d.country, n: 0, sum: 0, rated: 0 };
+      st[k].n++;
+      if (d.rating) { st[k].sum += d.rating; st[k].rated++; }
+    });
+    return st;
+  }
+  function kaartPanel(batches) {
+    var K = kaartData();
+    if (!K) return "";
+    var st = kaartStats(batches);
+    var C = 10; // pixels per rastercel
+    // Inzoomen op de koffiegordel: van 38° noord tot 38° zuid
+    var r0 = Math.floor((K.lat0 - 38) / K.step), r1 = Math.ceil((K.lat0 + 38) / K.step);
+    var rows = K.rows.slice(r0, r1);
+    var W = K.cols * C, H = rows.length * C;
+    var byChar = {};
+    K.countries.forEach(function (c) { byChar[c.char] = c; });
+    var land = [], coffee = [];
+    rows.forEach(function (row, r) {
+      for (var i = 0; i < row.length; i++) {
+        var ch = row.charAt(i);
+        if (ch === ".") continue;
+        var cx = i * C + C / 2, cy = r * C + C / 2;
+        if (ch === "#") { land.push('<circle cx="' + cx + '" cy="' + cy + '" r="3.2"/>'); continue; }
+        var c = byChar[ch];
+        coffee.push('<circle class="' + (st[c.key] ? "k-visited" : "k-coffee") + '" data-c="' + c.key + '" cx="' + cx + '" cy="' + cy + '" r="3.8"/>');
+      }
+    });
+    function y(lat) { return (K.lat0 - lat) / K.step * C - r0 * C; }
+    function x(lon) { return (lon - K.lon0) / K.step * C; }
+    var beltTop = y(K.belt[0]), beltBottom = y(K.belt[1]);
+    var pins = K.countries.slice().sort(function (a, b) { return (st[a.key] ? 1 : 0) - (st[b.key] ? 1 : 0); }).map(function (c) {
+      var px = x(c.pin[0]).toFixed(1), py = y(c.pin[1]).toFixed(1), s = st[c.key];
+      var label = c.name + (s ? ": " + s.n + (s.n === 1 ? " smaak" : " smaken") + " geproefd" : ": nog niet ontdekt");
+      return '<g class="k-pin' + (s ? " is-visited" : "") + '" data-c="' + c.key + '" tabindex="0" role="button" aria-label="' + esc(label) + '" transform="translate(' + px + " " + py + ')">' +
+        '<circle class="k-hit" r="14"/><circle class="k-ring" r="' + (s ? 10 : 6) + '"/><circle class="k-core" r="' + (s ? 5 : 3) + '"/>' +
+        (s && s.n > 1 ? '<text class="k-count" y="4">' + s.n + "</text>" : "") + "</g>";
+    }).join("");
+    var visitedKeys = Object.keys(st);
+    var onMap = visitedKeys.filter(function (k) { return kaartCountry(k); });
+    var chips = visitedKeys.map(function (k) {
+      var s = st[k];
+      return '<button type="button" class="kaart-chip' + (kaartCountry(k) ? "" : " is-offmap") + '" data-kaart="' + esc(k) + '">' + esc(s.name) + ' <span>' + s.n + "</span></button>";
+    }).join("");
+    return '<section class="kaart" aria-labelledby="kaart-title">' +
+      '<div class="kaart-head"><div><h3 id="kaart-title">Jouw koffiegordel</h3><p class="kaart-count"><b>' + onMap.length + '</b> van ' + K.countries.length + ' koffielanden ontdekt</p></div>' +
+      '<div class="kaart-legend"><span><i class="lg-visited"></i>Geproefd</span><span><i class="lg-coffee"></i>Nog te ontdekken</span></div></div>' +
+      '<div class="kaart-map"><svg viewBox="0 0 ' + W + " " + H + '" role="img" aria-label="Kaart van de koffiegordel met de landen waarvan je koffie hebt geproefd">' +
+      '<rect class="k-belt" x="0" y="' + beltTop.toFixed(1) + '" width="' + W + '" height="' + (beltBottom - beltTop).toFixed(1) + '"/>' +
+      '<line class="k-tropic" x1="0" x2="' + W + '" y1="' + beltTop.toFixed(1) + '" y2="' + beltTop.toFixed(1) + '"/><line class="k-tropic" x1="0" x2="' + W + '" y1="' + beltBottom.toFixed(1) + '" y2="' + beltBottom.toFixed(1) + '"/>' +
+      '<text class="k-beltlabel" x="' + (W - 10) + '" y="' + (beltTop - 8).toFixed(1) + '">KOFFIEGORDEL</text>' +
+      '<g class="k-land">' + land.join("") + '</g><g class="k-coffee-dots">' + coffee.join("") + "</g>" + pins + "</svg></div>" +
+      '<p class="kaart-info" aria-live="polite">' + (visitedKeys.length ? "Klik op een land om te zien welke smaken je daarvandaan kreeg." : "Na je eerste levering kleurt hier je eerste land oranje.") + "</p>" +
+      (chips ? '<div class="kaart-chips">' + chips + "</div>" : "") +
+      "</section>";
+  }
+  function bindKaart(panel, batches) {
+    var kaart = panel.querySelector(".kaart");
+    if (!kaart) return;
+    var st = kaartStats(batches);
+    var info = kaart.querySelector(".kaart-info");
+    var svg = kaart.querySelector("svg");
+    var bar = panel.querySelector(".passport-bar");
+    var defaultInfo = info.innerHTML;
+    function stars(avg) { var r = Math.round(avg); return "★★★★★".slice(0, r) + "☆☆☆☆☆".slice(0, 5 - r); }
+    function describe(key) {
+      var c = kaartCountry(key), s = st[key];
+      var name = c ? c.name : (s ? s.name : key);
+      if (!s) return "<strong>" + esc(name) + "</strong> · nog niet ontdekt. Wie weet komt het binnenkort in je brievenbus.";
+      return "<strong>" + esc(name) + "</strong> · " + s.n + (s.n === 1 ? " smaak" : " smaken") + " geproefd" +
+        (s.rated ? " · jouw score " + stars(s.sum / s.rated) : " · nog niet beoordeeld") + (c ? "" : " · niet op deze kaart");
+    }
+    function highlight(key) {
+      svg.classList.toggle("has-hover", !!key);
+      $$("[data-c]", svg).forEach(function (el) { el.classList.toggle("is-hover", !!key && el.getAttribute("data-c") === key); });
+      if (!kaartSelectie) info.innerHTML = key ? describe(key) : defaultInfo;
+    }
+    function select(key) {
+      kaartSelectie = key && st[key] ? key : null;
+      svg.classList.toggle("has-selection", !!kaartSelectie);
+      $$("[data-c]", svg).forEach(function (el) { el.classList.toggle("is-selected", el.getAttribute("data-c") === kaartSelectie); });
+      $$(".kaart-chip", kaart).forEach(function (b) { b.classList.toggle("is-active", b.getAttribute("data-kaart") === kaartSelectie); b.setAttribute("aria-pressed", b.getAttribute("data-kaart") === kaartSelectie ? "true" : "false"); });
+      $$(".bean-card", panel).forEach(function (card) { card.hidden = !!kaartSelectie && card.getAttribute("data-c") !== kaartSelectie; });
+      if (bar) {
+        bar.hidden = !kaartSelectie;
+        if (kaartSelectie) $(".passport-filter", bar).innerHTML = "Smaken uit <strong>" + esc(st[kaartSelectie].name) + "</strong>";
+      }
+      info.innerHTML = kaartSelectie ? describe(kaartSelectie) : defaultInfo;
+    }
+    kaart.addEventListener("mouseover", function (e) {
+      var el = e.target.closest("[data-c]");
+      highlight(el ? el.getAttribute("data-c") : null);
+    });
+    kaart.addEventListener("mouseleave", function () { highlight(null); });
+    kaart.addEventListener("focusin", function (e) {
+      var el = e.target.closest(".k-pin");
+      if (el) highlight(el.getAttribute("data-c"));
+    });
+    svg.addEventListener("click", function (e) {
+      var el = e.target.closest("[data-c]");
+      if (!el) { select(null); return; }
+      var key = el.getAttribute("data-c");
+      if (!st[key]) { info.innerHTML = describe(key); return; }
+      select(kaartSelectie === key ? null : key);
+    });
+    svg.addEventListener("keydown", function (e) {
+      var el = e.target.closest(".k-pin");
+      if (el && (e.key === "Enter" || e.key === " ")) {
+        e.preventDefault();
+        var key = el.getAttribute("data-c");
+        if (st[key]) select(kaartSelectie === key ? null : key); else info.innerHTML = describe(key);
+      }
+    });
+    panel.addEventListener("click", function (e) {
+      var t = e.target.closest("[data-kaart]");
+      if (t) {
+        var key = t.getAttribute("data-kaart");
+        select(kaartSelectie === key && t.classList.contains("kaart-chip") ? null : key);
+        if (t.classList.contains("bean-country")) kaart.scrollIntoView({ behavior: "smooth", block: "center" });
+        return;
+      }
+      if (e.target.closest("[data-kaart-reset]")) select(null);
+    });
+    // Een smaakkaart aanwijzen laat zijn land oplichten op de kaart
+    panel.addEventListener("mouseover", function (e) {
+      var card = e.target.closest(".bean-card");
+      if (card) highlight(card.getAttribute("data-c"));
+    });
+    panel.addEventListener("mouseout", function (e) {
+      var card = e.target.closest(".bean-card");
+      if (card && !card.contains(e.relatedTarget)) highlight(null);
+    });
+    if (kaartSelectie) select(kaartSelectie);
+  }
+
   function renderDashboard(acc) {
     var root = $("#dash-view");
     var sub = acc.sub;
@@ -843,11 +1004,11 @@
       '<div class="tiles">' +
       '<div class="tile tile--highlight two3">' + nextBlock + '<img class="mystery-bean" src="assets/img/khoffie-boon.svg" alt=""></div>' +
       '<div class="tile third"><h3>Jouw abonnement</h3><dl class="kv">' +
-      "<dt>Zak</dt><dd>" + esc(size.label) + "</dd><dt>Ritme</dt><dd>" + esc(freq.label) + "</dd><dt>Bonen</dt><dd>Hele bonen</dd><dt>Profiel</dt><dd>" + esc(CONFIG.roasts[sub.roast]) + "</dd><dt>Prijs</dt><dd>" + eur.format(size.price) + " / levering</dd></dl><p class=\"muted\" style=\"font-size:.85rem;margin:10px 0 0\">Inclusief verzending</p>" +
+      "<dt>Zak</dt><dd>" + esc(size.label) + "</dd><dt>Ritme</dt><dd>" + esc(freq.label) + "</dd><dt>Bonen</dt><dd>Hele bonen</dd><dt>Prijs</dt><dd>" + eur.format(size.price) + " / levering</dd></dl><p class=\"muted\" style=\"font-size:.85rem;margin:10px 0 0\">Inclusief verzending</p>" +
       '<div class="actions"><button class="link-arrow" style="background:none;border:0;padding:0;cursor:pointer;color:var(--copper)" data-goto="abonnement">Aanpassen</button></div></div>' +
       '<div class="tile third"><h3>Bonenpaspoort</h3><div class="big">' + allBatches.length + " <small>" + (allBatches.length === 1 ? "smaak" : "smaken") + "</small></div>" +
       '<p class="muted" style="margin:8px 0 0">' + countries.length + " " + (countries.length === 1 ? "land" : "landen") + " geproefd · " + rated + " beoordeeld</p>" +
-      '<div class="progress" aria-hidden="true"><i style="width:' + Math.min(100, (countries.length / 12) * 100) + '%"></i></div><p class="muted" style="font-size:.85rem;margin:0">' + countries.length + " van 12 herkomstlanden</p>" +
+      '<div class="progress" aria-hidden="true"><i style="width:' + Math.min(100, (countries.length / kaartTotal()) * 100) + '%"></i></div><p class="muted" style="font-size:.85rem;margin:0">' + countries.length + " van " + kaartTotal() + " koffielanden ontdekt</p>" +
       '<div class="actions"><button class="link-arrow" style="background:none;border:0;padding:0;cursor:pointer;color:var(--copper)" data-goto="paspoort">Bekijk paspoort</button></div></div>' +
       '<div class="tile third"><h3>Laatst ontvangen</h3>' +
       (last
@@ -873,11 +1034,8 @@
       Object.keys(CONFIG.freqs).map(function (k) {
         return '<label class="option"><input type="radio" name="freq" value="' + k + '"' + (sub.freq === k ? " checked" : "") + '><span class="card"><span class="title small">' + CONFIG.freqs[k].label + "</span></span></label>";
       }).join("") +
-      '</div><p class="muted" style="font-size:.9rem;margin:12px 0 0">De bonen wisselen per maand. Bij 2× per maand krijg je twee leveringen van dezelfde smaak.</p></div><div class="tile"><h3>Hele bonen</h3><p class="muted" style="margin:0 0 4px">We versturen altijd hele bonen: zo blijft je koffie het langst vers. Maal vlak voor het zetten voor de beste smaak.</p><h3 style="margin-top:20px">Brandprofiel</h3><div class="field"><label class="visually-hidden" for="p-roast">Brandprofiel</label><select id="p-roast" name="roast">' +
-      Object.keys(CONFIG.roasts).map(function (k) { return '<option value="' + k + '"' + (sub.roast === k ? " selected" : "") + ">" + CONFIG.roasts[k] + "</option>"; }).join("") +
-      "</select></div></div>" +
-      '<div class="tile wide"><h3>Notitie voor de brander</h3><div class="field"><label class="visually-hidden" for="p-note">Notitie</label><textarea id="p-note" name="note" placeholder="Bijv. ‘Ik hou van fruitig’ of ‘liever geen hele donkere branding’." style="min-height:90px">' + esc(sub.note) + '</textarea></div><p class="muted" style="font-size:.9rem;margin:10px 0 0">We gebruiken dit (en je beoordelingen) om de verrassing nog beter op jou af te stemmen.</p>' +
-      '<div class="actions"><button type="submit" class="btn">Wijzigingen opslaan</button></div></div>' +
+      '</div><p class="muted" style="font-size:.9rem;margin:12px 0 0">De bonen wisselen per maand. Bij 2× per maand krijg je twee leveringen van dezelfde smaak.</p></div><div class="tile"><h3>Hele bonen</h3><p class="muted" style="margin:0 0 4px">We versturen altijd hele bonen: zo blijft je koffie het langst vers. Maal vlak voor het zetten voor de beste smaak.</p><p class="muted" style="margin:14px 0 0">Welke bonen je krijgt, blijft elke maand een verrassing.</p></div>' +
+      '<div class="tile wide" style="padding:18px 24px"><div class="actions" style="margin:0"><button type="submit" class="btn">Wijzigingen opslaan</button></div></div>' +
       "</form>" +
       '<div class="tiles" style="margin-top:16px">' +
       '<div class="tile"><h3>Even geen koffie nodig?</h3><p class="muted">Op vakantie of nog genoeg in huis? Sla een levering over of pauzeer tot 3 maanden. Kost niks.</p><div class="actions">' +
@@ -890,9 +1048,9 @@
     $("#plan-form").addEventListener("submit", function (e) {
       e.preventDefault();
       var f = e.target;
-      var plan = { size: readChoice(f, "size"), freq: readChoice(f, "freq"), roast: f.elements.roast.value, note: f.elements.note.value.trim() };
+      var plan = { size: readChoice(f, "size"), freq: readChoice(f, "freq") };
       commit("update-plan", plan, function () {
-        sub.size = plan.size; sub.freq = plan.freq; sub.roast = plan.roast; sub.note = plan.note;
+        sub.size = plan.size; sub.freq = plan.freq;
       }, locked
         ? "Opgeslagen! Je levering van " + dateFmt.format(next) + " wordt al gebrand, dus dit geldt vanaf " + dateFmt.format(nextAfter(sub, next)) + "."
         : "Opgeslagen! Geldt vanaf je volgende levering.", function () { openTab("abonnement"); });
@@ -929,12 +1087,16 @@
     // ---- PASPOORT
     $("#tab-paspoort").innerHTML =
       '<span class="kicker">Bonenpaspoort</span><h2>Jouw bonenpaspoort</h2>' +
-      '<p class="lead">Elke smaak die je van ons kreeg, met herkomst en smaaknotities. Geef ze een score: hoe meer we weten, hoe beter we je kunnen verrassen.</p>' +
+      '<p class="lead">Elke smaak die je van ons kreeg, met herkomst en smaaknotities. Klik op een land op de kaart om de smaken van daar te zien, en geef ze een score.</p>' +
+      '<div class="paspoort-wrap">' + kaartPanel(allBatches) +
       (allBatches.length
-        ? '<div class="world"><span class="lbl">Landen in je paspoort</span><div class="world-list" style="margin-top:10px">' + countries.map(function (c) { return '<span class="chip chip--copper">' + icon("pin").replace("<svg", '<svg style="width:14px;height:14px"') + " " + esc(c) + "</span>"; }).join("") + "</div></div>" +
+        ? '<div class="passport-bar" hidden><span class="passport-filter"></span><button type="button" class="btn btn--ghost btn--small" data-kaart-reset>Toon alle smaken</button></div>' +
         '<div class="passport">' +
         allBatches.slice().reverse().map(function (d) {
-          return '<article class="bean-card"><header><div><div class="batch">Batch ' + esc(d.batch) + '</div><div class="country">' + esc(d.country) + '</div><div class="farm">' + esc(d.region) + " · " + esc(d.farm) + "</div></div>" +
+          var key = countryKey(d.country);
+          return '<article class="bean-card" data-c="' + esc(key) + '"><header><div><div class="batch">Batch ' + esc(d.batch) + '</div>' +
+            '<button type="button" class="country bean-country" data-kaart="' + esc(key) + '" title="Toon op de kaart">' + esc(d.country) + "</button>" +
+            '<div class="farm">' + esc(d.region) + " · " + esc(d.farm) + "</div></div>" +
             '<span class="chip">' + esc(d.process) + "</span></header>" +
             '<div class="notes">' + d.notes.map(function (n) { return '<span class="chip">' + esc(n) + "</span>"; }).join("") + "</div>" +
             '<div class="roast-scale" aria-label="Brandprofiel ' + d.roast + ' van 5">' + ["Light", "Med. light", "Medium", "Med. dark", "Dark"].map(function (l, i) { return '<span class="' + (i + 1 === d.roast ? "on" : "") + '">' + l + "</span>"; }).join("") + "</div>" +
@@ -942,7 +1104,8 @@
             [1, 2, 3, 4, 5].map(function (n) { return '<button type="button" class="' + (n <= d.rating ? "on" : "") + '" data-rate="' + esc(d.batch) + ":" + n + '" aria-label="' + n + ' sterren">' + icon("star") + "</button>"; }).join("") +
             "</div></article>";
         }).join("") + "</div>"
-        : '<div class="panel center"><img src="assets/img/khoffie-boon.svg" alt="" style="width:90px;margin:0 auto 18px"><h3>Je paspoort is nog leeg</h3><p class="muted" style="margin:0">Na je eerste levering verschijnt hier je eerste stempel.</p></div>');
+        : '<div class="panel center"><img src="assets/img/khoffie-boon.svg" alt="" style="width:90px;margin:0 auto 18px"><h3>Je paspoort is nog leeg</h3><p class="muted" style="margin:0">Na je eerste levering kleurt je eerste land oranje op de kaart.</p></div>') + "</div>";
+    bindKaart($("#tab-paspoort .paspoort-wrap"), allBatches);
 
     // ---- BETALINGEN
     var invoices = acc.deliveries.slice().reverse();
@@ -1015,14 +1178,14 @@
         var raw = rate.getAttribute("data-rate");
         var p = [raw.slice(0, raw.lastIndexOf(":")), raw.slice(raw.lastIndexOf(":") + 1)];
         if (live) {
-          commit("rate", { batch: p[0], rating: +p[1] }, null, +p[1] >= 4 ? "Genoteerd! We zoeken meer in deze richting." : "Dank! Daar houden we rekening mee.", function () { openTab("paspoort"); });
+          commit("rate", { batch: p[0], rating: +p[1] }, null, "Dank voor je score!", function () { openTab("paspoort"); });
           return;
         }
         acc.deliveries.forEach(function (d) { if (d.batch === p[0]) d.rating = +p[1]; });
         persist();
         renderDashboard(acc);
         openTab("paspoort");
-        toast(+p[1] >= 4 ? "Genoteerd! We zoeken meer in deze richting." : "Dank! Daar houden we rekening mee.");
+        toast("Dank voor je score!");
         return;
       }
       var goto = e.target.closest("[data-goto]");

@@ -925,3 +925,67 @@ dialog.modal .actions { justify-content: flex-end; }
   .roast-scale { gap: 6px; }
   .roast-scale span { width: 44px; font-size: 0.6rem; }
 }
+
+/* --------------------------------------------------------------------------
+   Koffiegordel-kaart in het bonenpaspoort
+   -------------------------------------------------------------------------- */
+.kaart { background: var(--white); border-radius: var(--radius); padding: clamp(18px, 3vw, 28px); margin-bottom: 20px; box-shadow: var(--shadow-sm); }
+.kaart-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 10px 24px; margin-bottom: 14px; }
+.kaart-head h3 { font-family: var(--f-label); font-weight: 600; text-transform: uppercase; letter-spacing: 0.14em; font-size: 0.78rem; color: var(--muted); margin: 0 0 4px; }
+.kaart-count { margin: 0; font-family: var(--f-display); font-weight: 600; font-size: 1.25rem; color: var(--navy); }
+.kaart-count b { font-size: 2rem; font-weight: 700; color: var(--orange); }
+.kaart-legend { display: flex; gap: 16px; font-size: 0.88rem; color: var(--muted); }
+.kaart-legend span { display: inline-flex; align-items: center; gap: 7px; }
+.kaart-legend i { width: 12px; height: 12px; border-radius: 50%; }
+.lg-visited { background: var(--orange); }
+.lg-coffee { background: var(--blue); opacity: 0.45; }
+.kaart-map { background: var(--paper); border-radius: 18px; padding: 8px; }
+.kaart-map svg { display: block; width: 100%; height: auto; }
+.k-land circle { fill: var(--blue); opacity: 0.14; }
+.k-coffee { fill: var(--blue); opacity: 0.42; transition: opacity 0.2s, fill 0.2s; }
+.k-visited { fill: var(--orange); transition: opacity 0.2s; cursor: pointer; }
+.k-belt { fill: var(--yellow); opacity: 0.22; }
+.k-tropic { stroke: var(--yellow); stroke-width: 2; stroke-dasharray: 6 8; }
+.k-beltlabel { font: 700 20px var(--f-label); letter-spacing: 4px; fill: var(--blue); text-anchor: end; }
+.k-pin { cursor: pointer; outline: none; }
+.k-pin .k-hit { fill: transparent; }
+.k-pin .k-ring { fill: var(--white); stroke: var(--blue); stroke-width: 2; opacity: 0.8; transition: transform 0.2s; }
+.k-pin .k-core { fill: var(--blue); opacity: 0.55; transition: transform 0.2s; }
+.k-pin.is-visited .k-ring { fill: var(--white); stroke: var(--orange); stroke-width: 3; opacity: 1; }
+.k-pin.is-visited .k-core { fill: var(--orange); opacity: 1; }
+.k-count { font: 700 11px var(--f-display); fill: var(--white); text-anchor: middle; pointer-events: none; }
+.k-pin.is-hover .k-ring, .k-pin.is-selected .k-ring, .k-pin:focus-visible .k-ring { transform: scale(1.45); }
+.k-pin:focus-visible .k-ring { stroke: var(--navy); stroke-width: 3; }
+.k-pin.is-selected .k-ring { fill: var(--yellow); }
+/* Bij een selectie of aanwijzing: de rest wat terug laten treden */
+svg.has-selection .k-visited:not(.is-selected), svg.has-selection .k-pin.is-visited:not(.is-selected) { opacity: 0.35; }
+svg.has-hover:not(.has-selection) .k-visited:not(.is-hover) { opacity: 0.55; }
+.k-coffee.is-hover { opacity: 0.8; }
+.kaart-info { margin: 14px 0 0; color: var(--muted); min-height: 1.6em; }
+.kaart-info strong { color: var(--navy); }
+.kaart-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.kaart-chip {
+  display: inline-flex; align-items: center; gap: 8px; border: 2px solid transparent; background: var(--yellow-tint); color: var(--navy);
+  font-family: var(--f-label); font-weight: 600; font-size: 0.92rem; padding: 6px 8px 6px 14px; border-radius: 999px; cursor: pointer;
+}
+.kaart-chip span { background: var(--white); border-radius: 999px; min-width: 24px; padding: 1px 7px; font-size: 0.8rem; text-align: center; }
+.kaart-chip:hover { border-color: var(--orange); }
+.kaart-chip.is-active { background: var(--orange); color: var(--white); }
+.kaart-chip.is-active span { color: var(--orange); }
+.kaart-chip.is-offmap { background: var(--paper); }
+.passport-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin: -4px 0 16px; padding: 12px 16px; background: var(--blue-tint); border-radius: 16px; }
+.passport-bar[hidden] { display: none; }
+.bean-card .bean-country {
+  display: block; background: none; border: 0; padding: 0; margin: 2px 0; cursor: pointer; text-align: left;
+  font-family: var(--f-display); font-weight: 700; font-size: 1.8rem; line-height: 1.05; color: var(--navy);
+}
+.bean-card .bean-country:hover { color: var(--orange); }
+.bean-card .bean-country::after { content: " ↗"; font-size: 0.9rem; color: var(--orange); opacity: 0; transition: opacity 0.15s; }
+.bean-card:hover .bean-country::after { opacity: 1; }
+@media (max-width: 700px) {
+  /* Op de telefoon: kaart breder en zijwaarts te vegen */
+  .kaart-map { padding: 4px; border-radius: 12px; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .kaart-map svg { width: 760px; max-width: none; }
+  .kaart-legend { font-size: 0.8rem; }
+  .kaart-map::after { content: "← veeg om de hele kaart te zien →"; display: block; text-align: center; font-size: 0.78rem; color: var(--muted); padding: 6px 0 2px; position: sticky; left: 0; width: calc(100vw - 80px); }
+}

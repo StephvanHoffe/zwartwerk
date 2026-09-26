@@ -436,7 +436,7 @@
           size: readChoice(form, "size"), freq: readChoice(form, "freq"),
           firstname: fd.get("firstname"), lastname: fd.get("lastname"), email: email, phone: fd.get("phone"),
           street: fd.get("street"), nr: fd.get("nr"), postcode: fd.get("postcode"), city: fd.get("city"),
-          password: fd.get("password"), referral: fd.get("referral") || "", newsletter: !!fd.get("newsletter"), terms: !!fd.get("terms")
+          password: fd.get("password"), referral: fd.get("referral") || "", terms: !!fd.get("terms"), mandate: !!fd.get("mandate")
         }).then(function (d) {
           btn.textContent = "Door naar iDEAL | Wero…";
           location.href = d.checkoutUrl;
@@ -460,7 +460,7 @@
           city: String(fd.get("city")).trim()
         },
         memberSince: new Date().toISOString(),
-        newsletter: !!fd.get("newsletter"),
+        newsletter: false,
         sub: {
           size: readChoice(form, "size"),
           freq: readChoice(form, "freq"),

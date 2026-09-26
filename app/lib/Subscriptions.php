@@ -93,6 +93,9 @@ final class Subscriptions
         if (empty($in['terms'])) {
             throw new InvalidArgumentException('Ga akkoord met de algemene voorwaarden.');
         }
+        if (empty($in['mandate'])) {
+            throw new InvalidArgumentException('Ga akkoord met de betaling via iDEAL | Wero en de machtiging voor automatische incasso.');
+        }
         $size = in_array($in['size'] ?? '', self::SIZES, true) ? $in['size'] : '500';
         $freq = in_array($in['freq'] ?? '', self::FREQS, true) ? $in['freq'] : '1m';
         $roast = in_array($in['roast'] ?? '', self::ROASTS, true) ? $in['roast'] : 'verras';

@@ -47,6 +47,8 @@ return [
 
     // Abonnement — houd deze gelijk aan de teksten op de website
     'prices' => ['250' => 1600, '500' => 2900],   // in centen, incl. btw en verzending
+    // Losse zak (eenmalig, geen abonnement, geen welkomstkorting). Weglaten = zelfde prijs als het abonnement.
+    // 'oneoff_prices' => ['250' => 1800, '500' => 3300],
     'bags' => ['250' => 1, '500' => 2],
     'welcome_discount_pct' => 25,
     'referral_discount_pct' => 50,               // korting eerste levering met uitnodigingscode

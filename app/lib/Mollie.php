@@ -50,6 +50,22 @@ final class Mollie
         ]);
     }
 
+    /** Losse bestelling: eenmalige betaling met iDEAL | Wero, zonder machtiging. */
+    public static function createOneoffPayment(string $customerId, int $cents, string $description, string $redirectUrl, array $metadata): array
+    {
+        return self::call('POST', '/payments', [
+            'amount' => ['currency' => 'EUR', 'value' => self::amount($cents)],
+            'customerId' => $customerId,
+            'sequenceType' => 'oneoff',
+            'method' => 'ideal',
+            'description' => $description,
+            'redirectUrl' => $redirectUrl,
+            'webhookUrl' => self::webhookUrl(),
+            'locale' => 'nl_NL',
+            'metadata' => $metadata,
+        ]);
+    }
+
     /** Automatische afschrijving op basis van de machtiging. */
     public static function createRecurringPayment(string $customerId, ?string $mandateId, int $cents, string $description, array $metadata): array
     {

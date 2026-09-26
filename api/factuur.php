@@ -33,7 +33,7 @@ function start_admin_session_readonly(): void
     session_start(['read_and_close' => true]);
 }
 
-$delivery = row('SELECT d.*, b.code FROM deliveries d LEFT JOIN batches b ON b.id = d.batch_id WHERE d.payment_id = ?', [$id]);
+$delivery = row('SELECT d.*, b.code, s.freq FROM deliveries d JOIN subscriptions s ON s.id = d.subscription_id LEFT JOIN batches b ON b.id = d.batch_id WHERE d.payment_id = ?', [$id]);
 $number = 'KH' . substr((string) $pay['created_at'], 0, 4) . '-' . str_pad((string) $pay['id'], 5, '0', STR_PAD_LEFT);
 $total = (int) $pay['amount_cents'];
 $vat = (int) cfg('vat_pct');
@@ -41,7 +41,7 @@ $excl = (int) round($total / (1 + $vat / 100));
 $lines = [];
 if ($delivery) {
     $lines[] = [
-        'Koffieabonnement: ' . ($delivery['size'] === '500' ? '500 gram (2 zakken)' : '250 gram') . ' hele bonen, levering ' . Format::date(new DateTimeImmutable($delivery['delivery_date']), false)
+        ($delivery['freq'] === Subscriptions::ONEOFF ? 'Losse zak koffie: ' : 'Koffieabonnement: ') . ($delivery['size'] === '500' ? '500 gram (2 zakken)' : '250 gram') . ' hele bonen, levering ' . Format::date(new DateTimeImmutable($delivery['delivery_date']), false)
             . ($delivery['code'] ? ' · batch ' . $delivery['code'] : ''),
         (int) $delivery['price_cents'],
     ];

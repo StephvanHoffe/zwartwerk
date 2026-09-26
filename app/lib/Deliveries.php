@@ -218,6 +218,21 @@ final class Deliveries
             } elseif ($failed && $delivery && $delivery['status'] === 'wacht_op_betaling') {
                 q('UPDATE deliveries SET status = "geannuleerd" WHERE id = ?', [$delivery['id']]);
             }
+        } elseif ($local['kind'] === 'oneoff') {
+            $delivery = row('SELECT * FROM deliveries WHERE payment_id = ?', [$local['id']]);
+            if ($status === 'paid') {
+                $sub['status'] = 'afgerond';
+                Subscriptions::save($sub);
+                if ($delivery) {
+                    q('UPDATE deliveries SET status = IF(status = "verzonden", status, "betaald") WHERE id = ?', [$delivery['id']]);
+                    self::assignBatch((int) $delivery['id']);
+                }
+                $date = new DateTimeImmutable($delivery['delivery_date'] ?? $sub['next_delivery']);
+                Mailer::orderConfirmed($user, $sub, $date);
+                Mailer::adminNewOrder($user, $sub, $date);
+            } elseif ($failed && $delivery && $delivery['status'] === 'wacht_op_betaling') {
+                q('UPDATE deliveries SET status = "geannuleerd" WHERE id = ?', [$delivery['id']]);
+            }
         } elseif ($local['kind'] === 'recurring') {
             $delivery = row('SELECT * FROM deliveries WHERE payment_id = ?', [$local['id']]);
             if ($delivery && $status === 'paid') {
@@ -264,7 +279,7 @@ final class Deliveries
         $out = [];
 
         $dbRows = rows('SELECT d.*, u.first_name, u.last_name, u.email, u.phone, u.street, u.house_number, u.postcode, u.city,
-                               b.code AS batch_code, b.country AS batch_country, p.status AS payment_status, s.status AS sub_status
+                               b.code AS batch_code, b.country AS batch_country, p.status AS payment_status, s.status AS sub_status, s.freq AS sub_freq
                         FROM deliveries d JOIN users u ON u.id = d.user_id JOIN subscriptions s ON s.id = d.subscription_id
                         LEFT JOIN batches b ON b.id = d.batch_id LEFT JOIN payments p ON p.id = d.payment_id
                         WHERE d.delivery_date BETWEEN ? AND ? ORDER BY d.delivery_date, u.last_name', [$monday->format('Y-m-d'), $sunday->format('Y-m-d')]);
@@ -314,6 +329,7 @@ final class Deliveries
                     'batch_country' => null,
                     'payment_status' => null,
                     'sub_status' => $sub['status'],
+                    'sub_freq' => $sub['freq'],
                     'parcels' => [],
                     'projected' => true,
                     'deadline' => Schedule::deadline($u['date'], $days)->format('Y-m-d'),

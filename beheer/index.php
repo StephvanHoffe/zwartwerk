@@ -15,14 +15,16 @@ $stats = row('SELECT
     SUM(status = "actief") AS actief, SUM(status = "gepauzeerd") AS gepauzeerd,
     SUM(status = "opgezegd") AS opgezegd, SUM(status = "nieuw") AS nieuw,
     SUM(status IN ("actief","gepauzeerd") AND size = "250") AS s250, SUM(status IN ("actief","gepauzeerd") AND size = "500") AS s500
-  FROM subscriptions');
+  FROM subscriptions WHERE freq <> "1x"');
+$orders = row('SELECT COUNT(*) AS n, COALESCE(SUM(p.amount_cents), 0) AS total FROM payments p WHERE p.kind = "oneoff" AND p.status = "paid" AND p.paid_at >= ?', [$today->format('Y-m-01')]);
 $month = row('SELECT COALESCE(SUM(amount_cents), 0) AS total FROM payments WHERE status = "paid" AND paid_at >= ?', [$today->format('Y-m-01')]);
 $failed = rows('SELECT d.id, d.delivery_date, u.id AS uid, u.first_name, u.last_name FROM deliveries d JOIN users u ON u.id = d.user_id WHERE d.status = "betaling_mislukt" ORDER BY d.delivery_date');
 $noBatch = row('SELECT COUNT(*) AS n FROM deliveries WHERE batch_id IS NULL AND status IN ("betaald", "wacht_op_betaling")');
 $months = [$today->format('Y-m'), $today->modify('first day of next month')->format('Y-m')];
 $batchMissing = array_filter($months, fn($m) => !row('SELECT id FROM batches WHERE month = ? AND active = 1', [$m]));
 $cronLast = setting('cron_last_run');
-$recent = rows('SELECT u.id, u.first_name, u.last_name, u.city, u.created_at, s.status, s.size, s.freq FROM users u JOIN subscriptions s ON s.user_id = u.id ORDER BY u.id DESC LIMIT 6');
+$recent = rows('SELECT u.id, u.first_name, u.last_name, u.city, u.created_at, s.status, s.size, s.freq FROM users u
+                 JOIN subscriptions s ON s.id = (SELECT MAX(id) FROM subscriptions WHERE user_id = u.id) ORDER BY u.id DESC LIMIT 6');
 
 layout_start('Overzicht', 'index');
 ?>
@@ -43,7 +45,7 @@ layout_start('Overzicht', 'index');
   <a class="card card--copper" href="week.php" style="text-decoration:none"><h3>Deze week verzenden</h3><div class="big"><?= $tw['parcels'] ?></div><div><?= $tw['bags'] ?> zakken van 250 g →</div></a>
   <a class="card" href="week.php?week=<?= e($monday->modify('+7 days')->format('Y-m-d')) ?>" style="text-decoration:none;color:inherit"><h3>Volgende week</h3><div class="big"><?= $nw['parcels'] ?></div><div class="muted"><?= $nw['bags'] ?> zakken (deels voorlopig)</div></a>
   <div class="card"><h3>Actieve abonnees</h3><div class="big"><?= (int) $stats['actief'] ?></div><div class="muted"><?= (int) $stats['gepauzeerd'] ?> gepauzeerd · <?= (int) $stats['s250'] ?>× 250 g · <?= (int) $stats['s500'] ?>× 500 g</div></div>
-  <div class="card"><h3>Ontvangen deze maand</h3><div class="big"><?= e(money((int) $month['total'])) ?></div><div class="muted">incl. btw</div></div>
+  <div class="card"><h3>Ontvangen deze maand</h3><div class="big"><?= e(money((int) $month['total'])) ?></div><div class="muted">incl. btw · waarvan <?= (int) $orders['n'] ?> losse <?= (int) $orders['n'] === 1 ? 'zak' : 'zakken' ?> (<?= e(money((int) $orders['total'])) ?>)</div></div>
 </div>
 
 <div class="grid2">
@@ -63,7 +65,7 @@ layout_start('Overzicht', 'index');
     <h3>Nieuwste klanten</h3>
     <?php foreach ($recent as $r): ?>
       <p style="margin:0 0 6px"><a href="klant.php?id=<?= (int) $r['id'] ?>"><?= e($r['first_name'] . ' ' . $r['last_name']) ?></a>
-        <span class="muted small">· <?= e($r['city']) ?> · <?= $r['size'] === '500' ? '500 g' : '250 g' ?>, <?= $r['freq'] === '2m' ? '2×' : '1×' ?> p/m</span> <?= status_chip($r['status']) ?></p>
+        <span class="muted small">· <?= e($r['city']) ?> · <?= $r['size'] === '500' ? '500 g' : '250 g' ?>, <?= $r['freq'] === '1x' ? 'losse zak' : ($r['freq'] === '2m' ? '2× p/m' : '1× p/m') ?></span> <?= status_chip($r['status']) ?></p>
     <?php endforeach; ?>
     <?php if (!$recent): ?><p class="muted">Nog geen klanten.</p><?php endif; ?>
   </div>

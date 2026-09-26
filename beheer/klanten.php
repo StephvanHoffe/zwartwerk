@@ -15,8 +15,13 @@ if ($search !== '') {
 if (in_array($status, ['nieuw', 'actief', 'gepauzeerd', 'opgezegd'], true)) {
     $where[] = 's.status = ?';
     $params[] = $status;
+} elseif ($status === 'los') {
+    $where[] = 's.id IS NULL';
 }
-$sql = 'SELECT u.*, s.status, s.size, s.freq, s.next_delivery FROM users u LEFT JOIN subscriptions s ON s.user_id = u.id'
+// Per klant het (laatste) abonnement; losse bestellingen tellen we apart
+$sql = 'SELECT u.*, s.status, s.size, s.freq, s.next_delivery,
+          (SELECT COUNT(*) FROM subscriptions o WHERE o.user_id = u.id AND o.freq = "1x" AND o.status = "afgerond") AS orders
+        FROM users u LEFT JOIN subscriptions s ON s.id = (SELECT MAX(id) FROM subscriptions WHERE user_id = u.id AND freq <> "1x")'
     . ($where ? ' WHERE ' . implode(' AND ', $where) : '') . ' ORDER BY u.created_at DESC LIMIT 500';
 $list = rows($sql, $params);
 
@@ -25,10 +30,10 @@ if (($_GET['export'] ?? '') === 'csv') {
     header('Content-Disposition: attachment; filename="khoffie-klanten.csv"');
     $fh = fopen('php://output', 'w');
     fwrite($fh, "\xEF\xBB\xBF");
-    fputcsv($fh, ['Voornaam', 'Achternaam', 'E-mail', 'Telefoon', 'Straat', 'Huisnummer', 'Postcode', 'Plaats', 'Abonnement', 'Ritme', 'Status', 'Volgende levering', 'Nieuwsbrief', 'Klant sinds'], ';', '"', '');
+    fputcsv($fh, ['Voornaam', 'Achternaam', 'E-mail', 'Telefoon', 'Straat', 'Huisnummer', 'Postcode', 'Plaats', 'Abonnement', 'Ritme', 'Status', 'Volgende levering', 'Losse bestellingen', 'Nieuwsbrief', 'Klant sinds'], ';', '"', '');
     foreach ($list as $u) {
         fputcsv($fh, [$u['first_name'], $u['last_name'], $u['email'], $u['phone'], $u['street'], $u['house_number'], $u['postcode'], $u['city'],
-            $u['size'] ? $u['size'] . ' g' : '', $u['freq'] === '2m' ? '2x per maand' : '1x per maand', $u['status'], $u['next_delivery'], $u['newsletter'] ? 'ja' : 'nee', substr($u['created_at'], 0, 10)], ';', '"', '');
+            $u['size'] ? $u['size'] . ' g' : '', $u['freq'] ? ($u['freq'] === '2m' ? '2x per maand' : '1x per maand') : '', $u['status'] ?? '', $u['next_delivery'] ?? '', (int) $u['orders'], $u['newsletter'] ? 'ja' : 'nee', substr($u['created_at'], 0, 10)], ';', '"', '');
     }
     exit;
 }
@@ -40,7 +45,7 @@ layout_start('Klanten', 'klanten');
   <input type="search" name="q" value="<?= e($search) ?>" placeholder="Zoek op naam, e-mail, postcode of plaats" style="max-width:340px">
   <select name="status" style="max-width:200px">
     <option value="">Alle statussen</option>
-    <?php foreach (['actief' => 'Actief', 'gepauzeerd' => 'Gepauzeerd', 'opgezegd' => 'Opgezegd', 'nieuw' => 'Nog niet betaald'] as $k => $v): ?>
+    <?php foreach (['actief' => 'Actief', 'gepauzeerd' => 'Gepauzeerd', 'opgezegd' => 'Opgezegd', 'nieuw' => 'Nog niet betaald', 'los' => 'Alleen losse zakken'] as $k => $v): ?>
       <option value="<?= $k ?>"<?= $status === $k ? ' selected' : '' ?>><?= $v ?></option>
     <?php endforeach; ?>
   </select>
@@ -57,9 +62,9 @@ layout_start('Klanten', 'klanten');
         <td><a href="klant.php?id=<?= (int) $u['id'] ?>"><?= e($u['first_name'] . ' ' . $u['last_name']) ?></a></td>
         <td class="small"><?= e($u['email']) ?></td>
         <td><?= e($u['city']) ?></td>
-        <td><?= $u['size'] ? ($u['size'] === '500' ? '500 g' : '250 g') . ', ' . ($u['freq'] === '2m' ? '2×' : '1×') . ' p/m' : '–' ?></td>
-        <td><?= $u['status'] ? status_chip($u['status']) : '' ?></td>
-        <td class="nowrap"><?= $u['status'] === 'opgezegd' ? '–' : e(nl_date($u['next_delivery'])) ?></td>
+        <td><?= $u['size'] ? ($u['size'] === '500' ? '500 g' : '250 g') . ', ' . ($u['freq'] === '2m' ? '2×' : '1×') . ' p/m' : '–' ?><?= (int) $u['orders'] ? '<div class="muted small">' . (int) $u['orders'] . '× losse zak</div>' : '' ?></td>
+        <td><?= $u['status'] ? status_chip($u['status']) : ((int) $u['orders'] ? '<span class="chip chip--muted">Losse zak</span>' : '') ?></td>
+        <td class="nowrap"><?= !$u['status'] || $u['status'] === 'opgezegd' ? '–' : e(nl_date($u['next_delivery'])) ?></td>
         <td class="nowrap small"><?= e(nl_date(substr($u['created_at'], 0, 10))) ?></td>
       </tr>
     <?php endforeach; ?>

@@ -109,7 +109,7 @@ layout_start('Verzendlijst', 'week');
       <?php endif; ?>
         <tr class="<?= $r['projected'] ? 'projected' : '' ?>">
           <td><?php if (!$r['projected']): ?><input type="checkbox" class="pick" name="ids[]" value="<?= (int) $r['id'] ?>"<?= $r['status'] === 'geannuleerd' ? ' disabled' : '' ?>><?php endif; ?></td>
-          <td><a href="klant.php?id=<?= (int) $r['user_id'] ?>"><?= e($r['first_name'] . ' ' . $r['last_name']) ?></a><?php if ($r['id']): ?><div class="muted small">KH-<?= (int) $r['id'] ?></div><?php endif; ?></td>
+          <td><a href="klant.php?id=<?= (int) $r['user_id'] ?>"><?= e($r['first_name'] . ' ' . $r['last_name']) ?></a><?php if ($r['id']): ?><div class="muted small">KH-<?= (int) $r['id'] ?><?= ($r['sub_freq'] ?? '') === '1x' ? ' · losse zak' : '' ?></div><?php endif; ?></td>
           <td class="small"><?= e($r['street'] . ' ' . $r['house_number']) ?><br><?= e($r['postcode'] . ' ' . $r['city']) ?></td>
           <td><?= (int) $r['bags'] ?>×</td>
           <td class="small"><?= $r['batch_code'] ? e($r['batch_code']) . '<br><span class="muted">' . e($r['batch_country']) . '</span>' : '<span class="muted">Smaak ' . e(Format::monthName($r['flavour_month'])) . '</span>' ?>

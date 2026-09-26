@@ -101,7 +101,8 @@ if (is_post()) {
 }
 
 $sub = Subscriptions::forUser($id);
-$deliveries = rows('SELECT d.*, b.code, b.country, p.status AS pstatus FROM deliveries d LEFT JOIN batches b ON b.id = d.batch_id LEFT JOIN payments p ON p.id = d.payment_id
+$deliveries = rows('SELECT d.*, b.code, b.country, p.status AS pstatus, s.freq FROM deliveries d JOIN subscriptions s ON s.id = d.subscription_id
+                    LEFT JOIN batches b ON b.id = d.batch_id LEFT JOIN payments p ON p.id = d.payment_id
                     WHERE d.user_id = ? ORDER BY d.delivery_date DESC', [$id]);
 $payments = rows('SELECT * FROM payments WHERE user_id = ? ORDER BY id DESC', [$id]);
 $batchList = rows('SELECT id, code, country, month FROM batches ORDER BY month DESC, code');
@@ -162,7 +163,7 @@ layout_start($user['first_name'] . ' ' . $user['last_name'], 'klanten');
         </form>
       <?php endif; ?>
     <?php else: ?>
-      <p class="muted">Geen abonnement.</p>
+      <p class="muted">Geen abonnement<?= row('SELECT id FROM subscriptions WHERE user_id = ? AND freq = "1x" LIMIT 1', [$id]) ? ': deze klant koopt losse zakken (zie leveringen hieronder).' : '.' ?></p>
     <?php endif; ?>
   </div>
 
@@ -200,7 +201,7 @@ layout_start($user['first_name'] . ' ' . $user['last_name'], 'klanten');
     <?php foreach ($deliveries as $d): $parcels = $d['sendcloud_parcels'] ? (json_decode($d['sendcloud_parcels'], true) ?: []) : []; ?>
       <tr>
         <td class="nowrap"><?= e(nl_date($d['delivery_date'], true)) ?><div class="muted small">KH-<?= (int) $d['id'] ?></div></td>
-        <td><?= (int) $d['bags'] ?> zak(ken)<?= $d['new_flavour'] ? '' : '<div class="muted small">2e van de maand</div>' ?></td>
+        <td><?= (int) $d['bags'] ?> zak(ken)<?= $d['freq'] === '1x' ? '<div class="muted small">losse zak</div>' : ($d['new_flavour'] ? '' : '<div class="muted small">2e van de maand</div>') ?></td>
         <td>
           <form method="post" class="inline-form"><?= csrf_field() ?><input type="hidden" name="id" value="<?= $id ?>"><input type="hidden" name="action" value="batch"><input type="hidden" name="delivery_id" value="<?= (int) $d['id'] ?>">
             <select name="batch_id" onchange="this.form.submit()" style="min-width:150px;padding:5px">
@@ -233,7 +234,7 @@ layout_start($user['first_name'] . ' ' . $user['last_name'], 'klanten');
         <?php foreach ($payments as $p): ?>
           <tr>
             <td class="nowrap small"><?= e(substr($p['created_at'], 0, 16)) ?></td>
-            <td><?= e(['first' => 'Eerste betaling', 'recurring' => 'Incasso', 'verify' => 'Rekening koppelen'][$p['kind']] ?? $p['kind']) ?></td>
+            <td><?= e(['first' => 'Eerste betaling', 'recurring' => 'Incasso', 'verify' => 'Rekening koppelen', 'oneoff' => 'Losse zak'][$p['kind']] ?? $p['kind']) ?></td>
             <td><?= e(money((int) $p['amount_cents'])) ?></td>
             <td><?= status_chip($p['status']) ?></td>
             <td class="small nowrap"><?php if ($p['status'] === 'paid'): ?><a href="../api/factuur.php?id=<?= (int) $p['id'] ?>" target="_blank">Factuur</a><?php endif; ?>

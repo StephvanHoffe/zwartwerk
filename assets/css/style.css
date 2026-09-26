@@ -59,6 +59,7 @@ body {
 }
 
 img { max-width: 100%; height: auto; display: block; }
+[hidden] { display: none !important; }
 main { overflow-x: clip; }
 a { color: var(--orange); text-decoration-thickness: 2px; text-underline-offset: 3px; }
 a:hover { color: var(--blue); }

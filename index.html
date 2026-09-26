@@ -182,7 +182,7 @@
           <div class="ornament"><img src="assets/img/khoffie-boon.svg" alt=""></div>
           <span class="kicker">Start je abonnement</span>
           <h2>Stel je abonnement samen</h2>
-          <p class="lead">In een minuut geregeld. Geen vaste looptijd: pauzeren, overslaan of stoppen doe je zelf in je account.</p>
+          <p class="lead">In een minuut geregeld. Geen vaste looptijd: pauzeren, overslaan of stoppen doe je zelf in je account. Liever eerst proeven? Kies bij stap 2 voor <a href="?ritme=eenmalig#abonnement" data-pick-freq="1x">één losse zak</a>.</p>
         </div>
 
         <div id="sub-flow">
@@ -205,8 +205,8 @@
 
               <fieldset class="config-step">
                 <legend><span class="num">02</span> Hoe vaak?</legend>
-                <p class="hint">De bonen wisselen per maand. Kies je 2× per maand, dan krijg je twee leveringen van dezelfde koffie — en de maand erna weer een nieuwe smaak.</p>
-                <div class="options options--2">
+                <p class="hint">De bonen wisselen per maand. Kies je 2× per maand, dan krijg je twee leveringen van dezelfde koffie — en de maand erna weer een nieuwe smaak. Eerst proeven? Bestel één losse zak, zonder abonnement.</p>
+                <div class="options options--3">
                   <label class="option">
                     <input type="radio" name="freq" value="1m" checked>
                     <span class="card"><span class="title small">1× per maand</span><span class="sub">Eén levering, één nieuwe smaak per maand</span></span>
@@ -215,7 +215,12 @@
                     <input type="radio" name="freq" value="2m">
                     <span class="card"><span class="title small">2× per maand</span><span class="sub">Twee leveringen van de smaak van de maand. Voor wie wat meer drinkt.</span></span>
                   </label>
+                  <label class="option">
+                    <input type="radio" name="freq" value="1x">
+                    <span class="card"><span class="title small">Eenmalig</span><span class="sub">Eén losse zak, geen abonnement. Handig om eerst te proeven.</span></span>
+                  </label>
                 </div>
+                <p class="freq-note" id="once-note" hidden><svg aria-hidden="true"><use href="#i-box"/></svg><span>Je krijgt één keer de smaak van de maand. Geen abonnement, geen machtiging: je betaalt alleen deze zak. Smaakt het naar meer? Een abonnement start je daarna zo.</span></p>
                 <p class="freq-note" id="freq-note" hidden><svg aria-hidden="true"><use href="#i-calendar"/></svg><span>Je tweede levering komt ± 2 weken na de eerste, met dezelfde bonen. Zo heb je de hele maand vers voorraad.</span></p>
               </fieldset>
 
@@ -247,8 +252,8 @@
                   <div class="field"><label class="lbl" for="f-street">Straat</label><input id="f-street" name="street" type="text" autocomplete="address-line1" data-validate="required"><span class="err">Vul je straat in.</span></div>
                   <div class="field half"><label class="lbl" for="f-email">E-mailadres</label><input id="f-email" name="email" type="email" autocomplete="email" data-validate="email"><span class="err">Vul een geldig e-mailadres in.</span></div>
                   <div class="field half"><label class="lbl" for="f-phone">Telefoon <span class="muted">(optioneel)</span></label><input id="f-phone" name="phone" type="tel" autocomplete="tel"></div>
-                  <div class="field"><label class="lbl" for="f-pass">Kies een wachtwoord</label><input id="f-pass" name="password" type="password" autocomplete="new-password" data-validate="password"><span class="err">Minimaal 6 tekens.</span><span class="muted" style="font-size:.85rem">Hiermee log je in op je account om je abonnement te beheren.</span></div>
-                  <div class="field half"><label class="lbl" for="f-referral">Uitnodigingscode <span class="muted">(optioneel)</span></label><input id="f-referral" name="referral" type="text" autocomplete="off" placeholder="KH-…" style="text-transform:uppercase"><p class="form-msg" id="referral-msg" role="status"></p></div>
+                  <div class="field"><label class="lbl" for="f-pass">Kies een wachtwoord</label><input id="f-pass" name="password" type="password" autocomplete="new-password" data-validate="password"><span class="err">Minimaal 6 tekens.</span><span class="muted" style="font-size:.85rem" id="pass-hint">Hiermee log je in op je account om je abonnement te beheren.</span></div>
+                  <div class="field half" id="referral-field"><label class="lbl" for="f-referral">Uitnodigingscode <span class="muted">(optioneel)</span></label><input id="f-referral" name="referral" type="text" autocomplete="off" placeholder="KH-…" style="text-transform:uppercase"><p class="form-msg" id="referral-msg" role="status"></p></div>
                 </div>
               </fieldset>
 
@@ -258,10 +263,11 @@
                   <div class="pay-logo" aria-hidden="true"><svg><use href="#i-card"/></svg></div>
                   <div>
                     <strong>iDEAL | Wero via Mollie</strong>
-                    <p>Je betaalt je eerste levering veilig met iDEAL | Wero. Daarmee geef je ook een machtiging, zodat we volgende leveringen automatisch afschrijven rond de verzenddatum. Een afschrijving kun je altijd binnen 8 weken via je bank laten terugboeken.</p>
+                    <p data-for="sub">Je betaalt je eerste levering veilig met iDEAL | Wero. Daarmee geef je ook een machtiging, zodat we volgende leveringen automatisch afschrijven rond de verzenddatum. Een afschrijving kun je altijd binnen 8 weken via je bank laten terugboeken.</p>
+                    <p data-for="once" hidden>Je betaalt je losse zak in één keer veilig met iDEAL | Wero. Er is geen abonnement: we schrijven daarna niets automatisch af.</p>
                   </div>
                 </div>
-                <div class="field" style="margin-top:20px"><label class="checkbox"><input type="checkbox" name="mandate" data-validate="required"> <span>Ik ga akkoord dat ik mijn eerste levering betaal met iDEAL | Wero en geef daarmee direct een machtiging voor automatische incasso van mijn volgende leveringen</span></label><span class="err">Even akkoord geven voor de betaling en machtiging.</span></div>
+                <div class="field" style="margin-top:20px" id="mandate-field"><label class="checkbox"><input type="checkbox" name="mandate" data-validate="required"> <span>Ik ga akkoord dat ik mijn eerste levering betaal met iDEAL | Wero en geef daarmee direct een machtiging voor automatische incasso van mijn volgende leveringen</span></label><span class="err">Even akkoord geven voor de betaling en machtiging.</span></div>
                 <div class="field" style="margin-top:10px"><label class="checkbox"><input type="checkbox" name="terms" data-validate="required"> <span>Ik ga akkoord met de <a href="algemene-voorwaarden.html" target="_blank">algemene voorwaarden</a> en heb het <a href="privacy.html" target="_blank">privacybeleid</a> gelezen</span></label><span class="err">Even akkoord geven, dan kunnen we branden.</span></div>
               </fieldset>
             </div>
@@ -278,19 +284,22 @@
               </dl>
               <hr class="rule">
               <dl>
-                <dt>Per levering</dt><dd id="sum-price">€ 29,00</dd>
+                <dt id="sum-price-label">Per levering</dt><dd id="sum-price">€ 29,00</dd>
                 <dt id="sum-discount-label">Welkomstkorting</dt><dd class="discount" id="sum-discount">− € 7,25</dd>
               </dl>
               <div class="total">
-                <span class="lbl" style="color:#6b5f52">Eerste levering</span>
+                <span class="lbl" style="color:#6b5f52" id="sum-first-label">Eerste levering</span>
                 <span class="amount" id="sum-first">€ 21,75</span>
               </div>
-              <p class="fine"><span id="sum-monthly">Daarna € 29,00 per levering</span>.<br>Eerste levering: <strong id="sum-date">dinsdag</strong>.</p>
+              <p class="fine"><span id="sum-monthly">Daarna € 29,00 per levering</span>.<br><span id="sum-date-label">Eerste levering</span>: <strong id="sum-date">dinsdag</strong>.</p>
               <button type="submit" class="btn btn--block">Afrekenen met iDEAL | Wero</button>
               <ul class="guarantees">
-                <li><svg aria-hidden="true"><use href="#i-check"/></svg>Geen vaste looptijd, maandelijks opzegbaar</li>
-                <li><svg aria-hidden="true"><use href="#i-check"/></svg>Pauzeren of overslaan met één klik</li>
-                <li><svg aria-hidden="true"><use href="#i-check"/></svg>Elke maand een nieuwe smaak</li>
+                <li data-for="sub"><svg aria-hidden="true"><use href="#i-check"/></svg>Geen vaste looptijd, maandelijks opzegbaar</li>
+                <li data-for="sub"><svg aria-hidden="true"><use href="#i-check"/></svg>Pauzeren of overslaan met één klik</li>
+                <li data-for="sub"><svg aria-hidden="true"><use href="#i-check"/></svg>Elke maand een nieuwe smaak</li>
+                <li data-for="once" hidden><svg aria-hidden="true"><use href="#i-check"/></svg>Geen abonnement, geen machtiging</li>
+                <li data-for="once" hidden><svg aria-hidden="true"><use href="#i-check"/></svg>De verse smaak van deze maand</li>
+                <li data-for="once" hidden><svg aria-hidden="true"><use href="#i-check"/></svg>Later alsnog een abonnement? Zo geregeld</li>
                 <li><svg aria-hidden="true"><use href="#i-check"/></svg>Past altijd door je brievenbus</li>
               </ul>
             </aside>
@@ -302,7 +311,8 @@
           <span class="kicker">Welkom bij Khoffie</span>
           <h2>Top, <span id="success-name">koffieliefhebber</span>!</h2>
           <p class="script" style="font-size:2rem">We gaan voor je branden.</p>
-          <p class="lead" style="margin:0 auto 28px">Je eerste zak komt op <strong id="success-date">dinsdag</strong>. Je ontvangt een bevestiging per mail. In je account kun je alles beheren: pauzeren, overslaan, je abonnement aanpassen en je bonen beoordelen.</p>
+          <p class="lead" style="margin:0 auto 28px" data-for="sub">Je eerste zak komt op <strong class="success-date">dinsdag</strong>. Je ontvangt een bevestiging per mail. In je account kun je alles beheren: pauzeren, overslaan, je abonnement aanpassen en je bonen beoordelen.</p>
+          <p class="lead" style="margin:0 auto 28px" data-for="once" hidden>Bedankt voor je bestelling! Je losse zak komt op <strong class="success-date">dinsdag</strong>. Je ontvangt een bevestiging per mail. In je account vind je je bestelling en factuur, en daar kun je ook je bonen beoordelen.</p>
           <a class="btn" href="account.html">Naar mijn account</a>
           <p class="demo-note" style="max-width:520px;margin:24px auto 0">Prototype: in de live-versie reken je hiervoor eerst af bij Mollie met iDEAL | Wero.</p>
         </div>

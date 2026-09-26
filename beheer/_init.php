@@ -76,7 +76,7 @@ function redirect(string $url): void
 function status_chip(string $status): string
 {
     $map = [
-        'actief' => 'ok', 'betaald' => 'ok', 'paid' => 'ok', 'verzonden' => 'ok',
+        'actief' => 'ok', 'afgerond' => 'ok', 'betaald' => 'ok', 'paid' => 'ok', 'verzonden' => 'ok',
         'gepauzeerd' => 'warn', 'wacht_op_betaling' => 'warn', 'open' => 'warn', 'pending' => 'warn', 'voorlopig' => 'muted', 'nieuw' => 'warn',
         'opgezegd' => 'muted', 'geannuleerd' => 'muted', 'canceled' => 'muted', 'expired' => 'muted',
         'betaling_mislukt' => 'bad', 'failed' => 'bad', 'charged_back' => 'bad',

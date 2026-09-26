@@ -92,6 +92,26 @@ final class Mailer
         self::send($user['email'], 'Je Khoffie is onderweg ☕', $body);
     }
 
+    public static function orderConfirmed(array $user, array $order, DateTimeImmutable $date): void
+    {
+        $body = "Hoi {$user['first_name']},\n\n"
+            . "Bedankt voor je bestelling! Je betaling is gelukt.\n\n"
+            . "Je bestelling: " . ($order['size'] === '500' ? '500 gram (2 zakken)' : '250 gram (1 zak)') . " hele bonen, eenmalig.\n"
+            . "We branden vers voor je en je koffie valt op " . Format::date($date) . " door de brievenbus. Welke bonen? Dat blijft een verrassing.\n\n"
+            . "In je account zie je je bestelling en factuur. Smaakt het naar meer? Daar kun je ook een abonnement starten:\n" . self::accountUrl()
+            . self::footer();
+        self::send($user['email'], 'Bedankt voor je bestelling ☕', $body);
+    }
+
+    public static function adminNewOrder(array $user, array $order, DateTimeImmutable $date): void
+    {
+        self::send((string) cfg('mail.admin_to'), 'Nieuwe losse bestelling: ' . $user['first_name'] . ' ' . $user['last_name'],
+            "Nieuwe losse bestelling!\n\n{$user['first_name']} {$user['last_name']} ({$user['email']})\n"
+            . ($order['size'] === '500' ? '500 gram (2 zakken)' : '250 gram (1 zak)') . ', eenmalig, levering ' . Format::date($date)
+            . "\n{$user['street']} {$user['house_number']}, {$user['postcode']} {$user['city']}\n\n"
+            . rtrim((string) cfg('base_url'), '/') . '/beheer/klant.php?id=' . $user['id']);
+    }
+
     public static function adminNewSubscriber(array $user, array $sub): void
     {
         self::send((string) cfg('mail.admin_to'), 'Nieuwe abonnee: ' . $user['first_name'] . ' ' . $user['last_name'],

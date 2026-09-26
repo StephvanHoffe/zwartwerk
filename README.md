@@ -22,6 +22,7 @@ Website voor **Khoffie**, een kleinschalige koffiebranderij uit Baarn met een ab
 - Leveringen vallen op dinsdag. De tweede levering bij 2× per maand komt 14 dagen na de eerste.
 - **Wijzigen, overslaan, pauzeren en opzeggen kan tot 7 dagen voor een levering.** Daarna wordt de zak al gebrand en geldt de wijziging vanaf de levering daarna.
 - Betalen via **Mollie met iDEAL | Wero**. De eerste betaling geeft een machtiging voor automatische afschrijving van volgende leveringen.
+- **Losse zak:** kies bij ‘Hoe vaak?’ voor *Eenmalig*. Eén keer de smaak van de maand, betaald met iDEAL | Wero zonder machtiging en zonder welkomstkorting. Een andere prijs instellen kan met `oneoff_prices` in `app/config.php`. Ingelogde klanten (ook abonnees) bestellen zo een extra zak.
 
 Prijzen, korting en opzegtermijn staan in `app/config.php` (de website haalt ze daar op) en in de teksten van de pagina's. Zonder server gebruikt de website het `CONFIG`-blok in `assets/js/main.js`.
 

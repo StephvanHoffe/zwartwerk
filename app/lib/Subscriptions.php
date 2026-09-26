@@ -9,13 +9,15 @@ final class Subscriptions
 {
     public const SIZES = ['250', '500'];
     public const FREQS = ['1m', '2m'];
+    /** Losse bestelling (eenmalig, geen abonnement). Staat ook in de tabel subscriptions, met freq '1x'. */
+    public const ONEOFF = '1x';
     public const ROASTS = ['verras', 'licht', 'medium-licht', 'medium', 'medium-donker', 'donker'];
 
     /* ------------------------------------------------------------------ laden & opslaan */
 
     public static function forUser(int $userId): ?array
     {
-        $s = row('SELECT * FROM subscriptions WHERE user_id = ? ORDER BY id DESC LIMIT 1', [$userId]);
+        $s = row('SELECT * FROM subscriptions WHERE user_id = ? AND freq <> ? ORDER BY id DESC LIMIT 1', [$userId, self::ONEOFF]);
         return $s ? self::decode($s) : null;
     }
 
@@ -66,16 +68,34 @@ final class Subscriptions
         return (int) cfg('prices')[$size];
     }
 
+    /** Prijs van een losse zak. Standaard gelijk aan de abonnementsprijs, zonder welkomstkorting. */
+    public static function oneoffPrice(string $size): int
+    {
+        $prices = cfg('oneoff_prices') ?: cfg('prices');
+        return (int) $prices[$size];
+    }
+
+    public static function isOneoff(array $s): bool
+    {
+        return $s['freq'] === self::ONEOFF;
+    }
+
     /* ------------------------------------------------------------------ aanmelden */
 
     /**
-     * Maakt klant + abonnement aan (status 'nieuw') en start de eerste betaling.
+     * Maakt klant + abonnement (status 'nieuw') of een losse bestelling aan en start de eerste betaling.
+     * Is de klant ingelogd ($currentUser), dan gebruiken we dat account en is geen wachtwoord nodig.
      * Geeft de Mollie-betaalpagina terug.
      */
-    public static function register(array $in): string
+    public static function register(array $in, ?int $currentUser = null): string
     {
-        $email = strtolower(trim((string) ($in['email'] ?? '')));
-        $required = ['firstname', 'lastname', 'street', 'nr', 'postcode', 'city', 'password'];
+        $oneoff = ($in['freq'] ?? '') === self::ONEOFF;
+        $current = $currentUser ? row('SELECT * FROM users WHERE id = ?', [$currentUser]) : null;
+        $email = $current ? $current['email'] : strtolower(trim((string) ($in['email'] ?? '')));
+        $required = ['firstname', 'lastname', 'street', 'nr', 'postcode', 'city'];
+        if (!$current) {
+            $required[] = 'password';
+        }
         foreach ($required as $f) {
             if (trim((string) ($in[$f] ?? '')) === '') {
                 throw new InvalidArgumentException('Niet alle verplichte velden zijn ingevuld.');
@@ -87,34 +107,44 @@ final class Subscriptions
         if (!valid_postcode((string) $in['postcode'])) {
             throw new InvalidArgumentException('Vul een geldige postcode in, bijvoorbeeld 1234 AB.');
         }
-        if (strlen((string) $in['password']) < 6) {
+        if (!$current && strlen((string) $in['password']) < 6) {
             throw new InvalidArgumentException('Kies een wachtwoord van minimaal 6 tekens.');
         }
         if (empty($in['terms'])) {
             throw new InvalidArgumentException('Ga akkoord met de algemene voorwaarden.');
         }
-        if (empty($in['mandate'])) {
+        // Alleen een abonnement schrijft later automatisch af; een losse zak betaal je in één keer
+        if (!$oneoff && empty($in['mandate'])) {
             throw new InvalidArgumentException('Ga akkoord met de betaling via iDEAL | Wero en de machtiging voor automatische incasso.');
         }
         $size = in_array($in['size'] ?? '', self::SIZES, true) ? $in['size'] : '500';
-        $freq = in_array($in['freq'] ?? '', self::FREQS, true) ? $in['freq'] : '1m';
+        $freq = $oneoff ? self::ONEOFF : (in_array($in['freq'] ?? '', self::FREQS, true) ? $in['freq'] : '1m');
         $roast = in_array($in['roast'] ?? '', self::ROASTS, true) ? $in['roast'] : 'verras';
 
-        $existing = row('SELECT id FROM users WHERE email = ?', [$email]);
-        if ($existing) {
-            $sub = self::forUser((int) $existing['id']);
-            if ($sub && $sub['status'] !== 'nieuw') {
-                throw new InvalidArgumentException('Er bestaat al een account met dit e-mailadres. Log in via Mijn account.');
+        if ($current) {
+            $sub = self::forUser((int) $current['id']);
+            if (!$oneoff && $sub && $sub['status'] !== 'nieuw') {
+                throw new InvalidArgumentException($sub['status'] === 'opgezegd'
+                    ? 'Je hebt al een abonnement. Hervat het via Mijn account → Abonnement.'
+                    : 'Je hebt al een abonnement. Je beheert het via Mijn account.');
             }
-            // Eerder begonnen maar niet betaald: opnieuw beginnen
-            q('DELETE FROM users WHERE id = ?', [$existing['id']]);
+        } else {
+            $existing = row('SELECT id FROM users WHERE email = ?', [$email]);
+            if ($existing) {
+                if (row('SELECT id FROM subscriptions WHERE user_id = ? AND status <> "nieuw" LIMIT 1', [$existing['id']])) {
+                    throw new InvalidArgumentException('Er bestaat al een account met dit e-mailadres. Log in via Mijn account en bestel daarna opnieuw.');
+                }
+                // Eerder begonnen maar niet betaald: opnieuw beginnen
+                q('DELETE FROM users WHERE id = ?', [$existing['id']]);
+            }
         }
 
+        // Uitnodigingscode geldt alleen bij een nieuw abonnement
         $referrer = null;
-        $code = strtoupper(trim((string) ($in['referral'] ?? '')));
+        $code = $oneoff ? '' : strtoupper(trim((string) ($in['referral'] ?? '')));
         if ($code !== '') {
             $referrer = row('SELECT id FROM users WHERE referral_code = ?', [$code]);
-            if (!$referrer) {
+            if (!$referrer || ($current && (int) $referrer['id'] === (int) $current['id'])) {
                 throw new InvalidArgumentException('Deze uitnodigingscode kennen we niet.');
             }
         }
@@ -122,26 +152,43 @@ final class Subscriptions
         $pdo = db();
         $pdo->beginTransaction();
         try {
-            q('INSERT INTO users (email, password_hash, first_name, last_name, phone, street, house_number, postcode, city, newsletter, referral_code, referred_by)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [
-                $email, password_hash((string) $in['password'], PASSWORD_DEFAULT),
+            $address = [
                 trim((string) $in['firstname']), trim((string) $in['lastname']), trim((string) ($in['phone'] ?? '')),
                 trim((string) $in['street']), trim((string) $in['nr']), normalize_postcode((string) $in['postcode']), trim((string) $in['city']),
-                !empty($in['newsletter']) ? 1 : 0, self::newReferralCode((string) $in['firstname']), $referrer['id'] ?? null,
-            ]);
-            $userId = (int) $pdo->lastInsertId();
+            ];
+            if ($current) {
+                $userId = (int) $current['id'];
+                q('UPDATE users SET first_name = ?, last_name = ?, phone = ?, street = ?, house_number = ?, postcode = ?, city = ? WHERE id = ?', [...$address, $userId]);
+                if ($referrer && !$current['referred_by']) {
+                    q('UPDATE users SET referred_by = ? WHERE id = ?', [$referrer['id'], $userId]);
+                }
+                // Een eerdere, niet betaalde aanmelding van hetzelfde soort vervangen
+                if ($oneoff) {
+                    q('DELETE FROM subscriptions WHERE user_id = ? AND freq = ? AND status = "nieuw"', [$userId, self::ONEOFF]);
+                } else {
+                    q('DELETE FROM subscriptions WHERE user_id = ? AND freq <> ? AND status = "nieuw"', [$userId, self::ONEOFF]);
+                }
+            } else {
+                q('INSERT INTO users (email, password_hash, first_name, last_name, phone, street, house_number, postcode, city, newsletter, referral_code, referred_by)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [
+                    $email, password_hash((string) $in['password'], PASSWORD_DEFAULT), ...$address,
+                    !empty($in['newsletter']) ? 1 : 0, self::newReferralCode((string) $in['firstname']), $referrer['id'] ?? null,
+                ]);
+                $userId = (int) $pdo->lastInsertId();
+            }
             $first = Schedule::firstDeliveryDate(today(), (int) cfg('first_delivery_min_days'));
+            $discountPct = $oneoff ? 0 : ($referrer ? (int) cfg('referral_discount_pct') : (int) cfg('welcome_discount_pct'));
             q('INSERT INTO subscriptions (user_id, size, freq, roast, status, anchor, next_delivery, skipped, first_discount_pct)
                VALUES (?, ?, ?, ?, "nieuw", ?, ?, "[]", ?)', [
-                $userId, $size, $freq, $roast, $first->format('Y-m-d'), $first->format('Y-m-d'),
-                $referrer ? (int) cfg('referral_discount_pct') : (int) cfg('welcome_discount_pct'),
+                $userId, $size, $freq, $roast, $first->format('Y-m-d'), $first->format('Y-m-d'), $discountPct,
             ]);
+            $subId = (int) $pdo->lastInsertId();
             $pdo->commit();
         } catch (Throwable $e) {
             $pdo->rollBack();
             throw $e;
         }
-        return self::startFirstPayment($userId);
+        return $oneoff ? self::startOneoffPayment($userId, $subId) : self::startFirstPayment($userId);
     }
 
     public static function newReferralCode(string $firstName): string
@@ -198,6 +245,40 @@ final class Subscriptions
         return (string) ($payment['_links']['checkout']['href'] ?? '');
     }
 
+    /** (Opnieuw) de betaling starten voor een losse bestelling. Eenmalig iDEAL | Wero, zonder machtiging. */
+    public static function startOneoffPayment(int $userId, int $orderId): string
+    {
+        $user = row('SELECT * FROM users WHERE id = ?', [$userId]);
+        $order = self::find($orderId);
+        if (!$user || !$order || (int) $order['user_id'] !== $userId || !self::isOneoff($order) || $order['status'] !== 'nieuw') {
+            throw new InvalidArgumentException('Er staat geen betaling open.');
+        }
+        $date = Schedule::firstDeliveryDate(today(), (int) cfg('first_delivery_min_days'));
+        $order['anchor'] = $order['next_delivery'] = $date->format('Y-m-d');
+        self::save($order);
+
+        $customerId = self::mollieCustomer($user);
+        $price = self::oneoffPrice($order['size']);
+
+        q('DELETE FROM deliveries WHERE subscription_id = ? AND status IN ("wacht_op_betaling", "geannuleerd")', [$order['id']]);
+        q('INSERT INTO deliveries (subscription_id, user_id, delivery_date, flavour_month, new_flavour, size, bags, price_cents, discount_cents, status)
+           VALUES (?, ?, ?, ?, 1, ?, ?, ?, 0, "wacht_op_betaling")', [
+            $order['id'], $userId, $date->format('Y-m-d'), $date->format('Y-m'), $order['size'], cfg('bags')[$order['size']], $price,
+        ]);
+        $deliveryId = (int) db()->lastInsertId();
+
+        $payment = Mollie::createOneoffPayment($customerId, $price,
+            'Khoffie losse zak ' . ($order['size'] === '500' ? '500 g' : '250 g'),
+            rtrim((string) cfg('base_url'), '/') . '/account.html?betaling=bestelling',
+            ['type' => 'oneoff', 'subscription_id' => $order['id'], 'delivery_id' => $deliveryId]);
+
+        q('INSERT INTO payments (user_id, subscription_id, mollie_id, kind, amount_cents, status, description, checkout_url) VALUES (?, ?, ?, "oneoff", ?, ?, ?, ?)', [
+            $userId, $order['id'], $payment['id'], $price, $payment['status'] ?? 'open', $payment['description'] ?? '', $payment['_links']['checkout']['href'] ?? null,
+        ]);
+        q('UPDATE deliveries SET payment_id = ? WHERE id = ?', [db()->lastInsertId(), $deliveryId]);
+        return (string) ($payment['_links']['checkout']['href'] ?? '');
+    }
+
     /** Nieuwe rekening koppelen: verificatiebetaling van € 0,01 via iDEAL | Wero. */
     public static function startBankChange(int $userId): string
     {
@@ -227,16 +308,23 @@ final class Subscriptions
 
     public static function action(int $userId, string $action, array $in): array
     {
-        $sub = self::forUser($userId);
-        if (!$sub) {
-            throw new InvalidArgumentException('Geen abonnement gevonden.');
+        if ($action === 'retry-order') {
+            return ['ok' => true, 'checkoutUrl' => self::startOneoffPayment($userId, (int) ($in['id'] ?? 0))];
         }
-        $sub = self::normalize($sub);
+        $sub = self::forUser($userId);
         $today = today();
         $days = (int) cfg('cancel_days');
-        $next = self::next($sub);
-        $locked = Schedule::isLocked($next, $today, $days);
         $result = [];
+        // Wie alleen losse zakken koopt heeft geen abonnement; gegevens, wachtwoord en scores kan hij wel beheren
+        if (!$sub) {
+            if (!in_array($action, ['rate', 'update-details', 'change-password'], true)) {
+                throw new InvalidArgumentException('Geen abonnement gevonden.');
+            }
+        } else {
+            $sub = self::normalize($sub);
+            $next = self::next($sub);
+            $locked = Schedule::isLocked($next, $today, $days);
+        }
 
         switch ($action) {
             case 'skip':
@@ -411,8 +499,9 @@ final class Subscriptions
             $ratings[(int) $r['batch_id']] = (int) $r['rating'];
         }
         $deliveries = [];
-        $list = rows('SELECT d.*, b.code, b.country, b.region, b.farm, b.process, b.notes, b.roast AS broast, p.status AS pstatus
-                      FROM deliveries d LEFT JOIN batches b ON b.id = d.batch_id LEFT JOIN payments p ON p.id = d.payment_id
+        $list = rows('SELECT d.*, b.code, b.country, b.region, b.farm, b.process, b.notes, b.roast AS broast, p.status AS pstatus, s.freq
+                      FROM deliveries d JOIN subscriptions s ON s.id = d.subscription_id
+                      LEFT JOIN batches b ON b.id = d.batch_id LEFT JOIN payments p ON p.id = d.payment_id
                       WHERE d.user_id = ? AND d.status IN ("betaald", "verzonden") ORDER BY d.delivery_date', [$userId]);
         foreach ($list as $d) {
             $shipped = $d['status'] === 'verzonden' || $d['delivery_date'] <= today()->format('Y-m-d');
@@ -437,6 +526,25 @@ final class Subscriptions
                 'rating' => $ratings[(int) $d['batch_id']] ?? 0,
                 'invoice' => $d['payment_id'] ? (int) $d['payment_id'] : null,
                 'tracking' => array_values(array_filter(array_column($parcels, 'tracking_url'))),
+                'oneoff' => $d['freq'] === self::ONEOFF,
+            ];
+        }
+        // Losse bestellingen die nog niet bezorgd zijn (of nog betaald moeten worden)
+        $orders = [];
+        $list = rows('SELECT s.id, s.size, s.status, s.next_delivery, d.delivery_date, d.status AS dstatus, d.price_cents, p.status AS pstatus
+                      FROM subscriptions s LEFT JOIN deliveries d ON d.subscription_id = s.id LEFT JOIN payments p ON p.id = d.payment_id
+                      WHERE s.user_id = ? AND s.freq = ? ORDER BY s.id', [$userId, self::ONEOFF]);
+        foreach ($list as $o) {
+            $date = $o['delivery_date'] ?: $o['next_delivery'];
+            if ($o['dstatus'] === 'verzonden' || ($o['status'] !== 'nieuw' && $date < today()->format('Y-m-d'))) {
+                continue; // staat al bij de geschiedenis
+            }
+            $orders[] = [
+                'id' => (int) $o['id'],
+                'size' => $o['size'],
+                'date' => self::jsDate($date),
+                'price' => ($o['price_cents'] ?? self::oneoffPrice($o['size'])) / 100,
+                'status' => $o['status'] === 'nieuw' ? (in_array($o['pstatus'], ['open', 'pending'], true) ? 'open' : 'onbetaald') : 'betaald',
             ];
         }
         $pending = null;
@@ -456,6 +564,7 @@ final class Subscriptions
             'referral' => $u['referral_code'],
             'credit' => (int) $u['credit_cents'] / 100,
             'pendingPayment' => $pending,
+            'orders' => $orders,
             'sub' => $s ? [
                 'size' => $s['size'],
                 'freq' => $s['freq'],

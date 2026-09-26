@@ -8,7 +8,12 @@ if (too_many_attempts('signup')) {
     Http::error('Te veel pogingen. Probeer het over een kwartier opnieuw.', 429);
 }
 record_attempt('signup');
-$checkout = Subscriptions::register($in);
-$user = row('SELECT id FROM users WHERE email = ?', [strtolower(trim((string) $in['email']))]);
+// Ingelogde klant (bijv. een abonnee die een losse zak bestelt): dat account gebruiken
+$current = customer_id();
+if ($current && !row('SELECT id FROM users WHERE id = ?', [$current])) {
+    $current = null;
+}
+$checkout = Subscriptions::register($in, $current);
+$user = $current ? ['id' => $current] : row('SELECT id FROM users WHERE email = ?', [strtolower(trim((string) $in['email']))]);
 login_customer((int) $user['id']);
 Http::json(['ok' => true, 'checkoutUrl' => $checkout]);

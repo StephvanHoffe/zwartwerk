@@ -25,6 +25,8 @@
       "1m": { label: "1× per maand", perMonth: 1 },
       "2m": { label: "2× per maand", perMonth: 2 }
     },
+    // Losse zak (eenmalig, geen abonnement): prijs per bestelling, zonder welkomstkorting
+    oneoffPrices: { "250": 16, "500": 29 },
     cancelDays: 7, // wijzigen/opzeggen kan tot 7 dagen voor de volgende levering
     // We versturen uitsluitend hele bonen: die blijven het langst vers.
     grinds: { bonen: "Hele bonen" },
@@ -41,6 +43,9 @@
     welcomeDiscount: 0.25, // 25% korting op de eerste levering
     referralDiscount: 0.5 // 50% korting op de eerste levering met een uitnodigingscode
   };
+
+  // Losse zak = ritme "1x": geen abonnement, geen machtiging, geen welkomstkorting
+  var ONCE = "1x";
 
   var eur = new Intl.NumberFormat("nl-NL", { style: "currency", currency: "EUR" });
   var dateFmt = new Intl.DateTimeFormat("nl-NL", { weekday: "long", day: "numeric", month: "long" });
@@ -180,6 +185,7 @@
     if (!d.live) return false;
     LIVE = true;
     Object.keys(d.prices || {}).forEach(function (k) { if (CONFIG.sizes[k]) CONFIG.sizes[k].price = d.prices[k]; });
+    Object.keys(d.oneoffPrices || {}).forEach(function (k) { if (CONFIG.oneoffPrices[k] != null) CONFIG.oneoffPrices[k] = d.oneoffPrices[k]; });
     if (typeof d.welcomeDiscount === "number") CONFIG.welcomeDiscount = d.welcomeDiscount;
     if (typeof d.referralDiscount === "number") CONFIG.referralDiscount = d.referralDiscount;
     if (typeof d.cancelDays === "number") CONFIG.cancelDays = d.cancelDays;
@@ -320,6 +326,7 @@
   function validateForm(form) {
     var firstBad = null;
     $$("[data-validate]", form).forEach(function (input) {
+      if (input.disabled) return; // uitgeschakelde velden (bijv. machtiging bij een losse zak) tellen niet mee
       var field = input.closest(".field");
       var rules = input.getAttribute("data-validate").split(" ");
       var ok = true;
@@ -352,48 +359,81 @@
   }
 
   function initConfigurator(form) {
-    // prijzen in de kaarten zetten
-    $$("[data-size-price]", form).forEach(function (el) {
-      el.textContent = eur.format(CONFIG.sizes[el.getAttribute("data-size-price")].price) + " per levering";
-    });
-
-    // voorkeuze vanuit ?plan=500 of knoppen met data-pick
+    // voorkeuze vanuit ?plan=500, ?ritme=eenmalig of knoppen met data-pick
     var params = new URLSearchParams(location.search);
     if (params.get("plan") && CONFIG.sizes[params.get("plan")]) {
       var r = $('input[name="size"][value="' + params.get("plan") + '"]', form);
       if (r) r.checked = true;
     }
+    if (params.get("ritme") === "eenmalig") $('input[name="freq"][value="' + ONCE + '"]', form).checked = true;
     $$("[data-pick-size]").forEach(function (btn) {
       btn.addEventListener("click", function () {
         var r = $('input[name="size"][value="' + btn.getAttribute("data-pick-size") + '"]', form);
         if (r) { r.checked = true; update(); }
       });
     });
+    $$("[data-pick-freq]").forEach(function (btn) {
+      btn.addEventListener("click", function (e) {
+        var r = $('input[name="freq"][value="' + btn.getAttribute("data-pick-freq") + '"]', form);
+        if (!r) return;
+        e.preventDefault();
+        r.checked = true;
+        update();
+        r.closest("fieldset").scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    });
 
     var first = firstDeliveryDate();
+    var loggedIn = null; // ingelogde klant (live): dan hoeft er geen wachtwoord gekozen te worden
+
+    function isOnce() { return readChoice(form, "freq") === ONCE; }
+
+    // Tekst en velden die alleen bij een abonnement of alleen bij een losse zak horen
+    function toggleFor(root, once) {
+      $$("[data-for]", root).forEach(function (el) { el.hidden = (el.getAttribute("data-for") === "once") !== once; });
+    }
 
     function update() {
       var size = readChoice(form, "size");
-      var freq = readChoice(form, "freq");
+      var once = isOnce();
       var grind = "bonen";
       var s = CONFIG.sizes[size];
-      var f = CONFIG.freqs[freq];
-      var price = s.price;
-      var pct = referralOk ? CONFIG.referralDiscount : CONFIG.welcomeDiscount;
+      var f = once ? { label: "Eenmalig", perMonth: 0 } : CONFIG.freqs[readChoice(form, "freq")];
+      var price = once ? CONFIG.oneoffPrices[size] : s.price;
+      var pct = once ? 0 : referralOk ? CONFIG.referralDiscount : CONFIG.welcomeDiscount;
       var firstPrice = Math.round(price * (1 - pct) * 100) / 100;
       $("#sum-discount-label").textContent = referralOk ? "Uitnodigingskorting" : "Welkomstkorting";
       var monthly = price * f.perMonth;
 
+      $$("[data-size-price]", form).forEach(function (el) {
+        var k = el.getAttribute("data-size-price");
+        el.textContent = once ? eur.format(CONFIG.oneoffPrices[k]) + " eenmalig" : eur.format(CONFIG.sizes[k].price) + " per levering";
+      });
+      $("#sum-title").textContent = once ? "Jouw bestelling" : "Jouw abonnement";
       $("#sum-size").textContent = s.label;
       $("#sum-freq").textContent = f.label;
       $("#sum-grind").textContent = CONFIG.grinds[grind];
+      $("#sum-price-label").textContent = once ? "Prijs" : "Per levering";
       $("#sum-price").textContent = eur.format(price);
+      $("#sum-discount-label").hidden = $("#sum-discount").hidden = once;
       $("#sum-discount").textContent = "− " + eur.format(price - firstPrice);
+      $("#sum-first-label").textContent = once ? "Totaal" : "Eerste levering";
       $("#sum-first").textContent = eur.format(firstPrice);
-      $("#sum-monthly").textContent = "Daarna " + eur.format(price) + " per levering" + (f.perMonth > 1 ? " (" + eur.format(monthly) + " per maand)" : "");
+      $("#sum-monthly").textContent = once ? "Eenmalig, geen abonnement" : "Daarna " + eur.format(price) + " per levering" + (f.perMonth > 1 ? " (" + eur.format(monthly) + " per maand)" : "");
+      $("#sum-date-label").textContent = once ? "Bezorging" : "Eerste levering";
       $("#sum-date").textContent = capitalize(dateFmt.format(first));
       var note = $("#freq-note");
-      if (note) note.hidden = f.perMonth < 2;
+      if (note) note.hidden = once || f.perMonth < 2;
+      $("#once-note").hidden = !once;
+      toggleFor(form, once);
+      // Bij een losse zak geen machtiging en geen uitnodigingscode
+      $("#mandate-field").hidden = once;
+      form.elements.mandate.disabled = once;
+      $("#referral-field").hidden = once;
+      if (refInput) refInput.disabled = once;
+      $("#pass-hint").textContent = once
+        ? "Hiermee log je in om je bestelling en factuur te bekijken."
+        : "Hiermee log je in op je account om je abonnement te beheren.";
     }
     // Uitnodigingscode (optioneel): 50% korting op de eerste levering
     var referralOk = false;
@@ -432,6 +472,7 @@
         var btn = $(".summary button[type=submit]");
         btn.disabled = true;
         btn.textContent = "Even geduld…";
+        var once0 = isOnce();
         api("subscribe.php", {
           size: readChoice(form, "size"), freq: readChoice(form, "freq"),
           firstname: fd.get("firstname"), lastname: fd.get("lastname"), email: email, phone: fd.get("phone"),
@@ -444,10 +485,31 @@
           btn.disabled = false;
           btn.textContent = "Afrekenen met iDEAL | Wero";
           toast(err.message);
+          if (err.status === 400 && once0 === false && /al een abonnement/.test(err.message)) {
+            $('input[name="freq"][value="' + ONCE + '"]', form).checked = true;
+            update();
+          }
         });
         return;
       }
       var existing = getAccounts()[email];
+      var once = isOnce();
+      if (once) {
+        // Losse zak in het voorbeeld: account (bestaand of nieuw) met een bestelling, zonder abonnement
+        var o = existing ? migrate(existing) : {
+          email: email, password: String(fd.get("password")), memberSince: new Date().toISOString(), newsletter: false,
+          sub: null, deliveries: [], orders: [],
+          referral: "KH-" + String(fd.get("firstname")).trim().toUpperCase().replace(/[^A-Z]/g, "").slice(0, 5) + Math.floor(100 + Math.random() * 900)
+        };
+        o.name = String(fd.get("firstname")).trim() + " " + String(fd.get("lastname")).trim();
+        o.phone = String(fd.get("phone") || "").trim();
+        o.address = { street: String(fd.get("street")).trim(), nr: String(fd.get("nr")).trim(), postcode: String(fd.get("postcode")).trim().toUpperCase(), city: String(fd.get("city")).trim() };
+        o.orders = (o.orders || []).concat([{ id: Date.now(), size: readChoice(form, "size"), date: first.toISOString(), price: CONFIG.oneoffPrices[readChoice(form, "size")], status: "betaald" }]);
+        saveAccount(o);
+        login(email);
+        showSuccess(o, true);
+        return;
+      }
       var acc = {
         name: String(fd.get("firstname")).trim() + " " + String(fd.get("lastname")).trim(),
         email: email,
@@ -474,18 +536,58 @@
           note: ""
         },
         deliveries: existing ? existing.deliveries : [],
+        orders: existing ? existing.orders || [] : [],
         referral: "KH-" + String(fd.get("firstname")).trim().toUpperCase().replace(/[^A-Z]/g, "").slice(0, 5) + Math.floor(100 + Math.random() * 900)
       };
       saveAccount(acc);
       login(email);
+      showSuccess(acc, false);
+    });
 
+    function showSuccess(acc, once) {
       $("#sub-flow").hidden = true;
       var ok = $("#sub-success");
+      toggleFor(ok, once);
       $("#success-name").textContent = acc.name.split(" ")[0];
-      $("#success-date").textContent = dateFmt.format(first);
+      $$(".success-date", ok).forEach(function (el) { el.textContent = dateFmt.format(first); });
       ok.classList.add("is-visible");
       ok.scrollIntoView({ behavior: "smooth", block: "start" });
       $$("[data-account-label]").forEach(function (el) { el.textContent = "Hoi " + acc.name.split(" ")[0]; });
+    }
+
+    // Ingelogd (live)? Dan je gegevens alvast invullen en is geen nieuw wachtwoord nodig.
+    // Heb je al een abonnement, dan bestel je hier een extra losse zak.
+    livePromise.then(function (live) {
+      if (!live) return;
+      api("account.php").then(function (acc) {
+        loggedIn = acc;
+        var el = form.elements;
+        var parts = acc.name.split(" ");
+        el.firstname.value = parts[0] || "";
+        el.lastname.value = parts.slice(1).join(" ");
+        el.email.value = acc.email;
+        el.email.readOnly = true;
+        el.phone.value = acc.phone || "";
+        el.street.value = acc.address.street;
+        el.nr.value = acc.address.nr;
+        el.postcode.value = acc.address.postcode;
+        el.city.value = acc.address.city;
+        el.password.disabled = true;
+        el.password.closest(".field").hidden = true;
+        var hasSub = acc.sub && acc.sub.status !== "nieuw";
+        if (hasSub) {
+          $$('input[name="freq"]', form).forEach(function (r) {
+            if (r.value !== ONCE) { r.disabled = true; r.closest(".option").style.opacity = ".5"; }
+          });
+          $('input[name="freq"][value="' + ONCE + '"]', form).checked = true;
+        }
+        var note = document.createElement("p");
+        note.className = "freq-note";
+        note.innerHTML = icon("user") + "<span>Je bent ingelogd als " + esc(acc.email) + "." +
+          (hasSub ? " Je hebt al een abonnement, dus hier bestel je een extra losse zak. Die sturen we naar het adres hieronder." : " We gebruiken je account, dus je hoeft geen wachtwoord te kiezen.") + "</span>";
+        el.email.closest("fieldset").appendChild(note);
+        update();
+      }).catch(function () { /* niet ingelogd */ });
     });
   }
 
@@ -620,6 +722,9 @@
   // Oudere accounts (uit de eerste versie) bijwerken naar het huidige model
   function migrate(acc) {
     var sub = acc.sub;
+    acc.orders = acc.orders || [];
+    acc.deliveries = acc.deliveries || [];
+    if (!sub) return acc; // alleen losse zakken, geen abonnement
     if (!CONFIG.freqs[sub.freq]) sub.freq = sub.freq === "2w" ? "2m" : "1m";
     if (!CONFIG.sizes[sub.size]) sub.size = "500";
     sub.grind = "bonen";
@@ -705,6 +810,10 @@
         if (params.get("betaling") === "terug") {
           toast(acc.sub && acc.sub.status === "nieuw" ? "We wachten nog op de bevestiging van je betaling…" : "Bedankt! Je betaling is gelukt.");
           if (acc.sub && acc.sub.status === "nieuw") setTimeout(function () { api("account.php").then(renderDashboard).catch(function () {}); }, 4000);
+        } else if (params.get("betaling") === "bestelling") {
+          var waiting = (acc.orders || []).some(function (o) { return o.status === "open"; });
+          toast(waiting ? "We wachten nog op de bevestiging van je betaling…" : "Bedankt voor je bestelling! We gaan voor je branden.");
+          if (waiting) setTimeout(function () { api("account.php").then(renderDashboard).catch(function () {}); }, 4000);
         } else if (params.get("betaling") === "rekening") {
           toast("Bedankt! Zodra de betaling binnen is, schrijven we voortaan van je nieuwe rekening af.");
         }
@@ -897,7 +1006,10 @@
 
   function renderDashboard(acc) {
     var root = $("#dash-view");
-    var sub = acc.sub;
+    var hasSub = !!acc.sub;
+    // Wie alleen losse zakken koopt heeft geen abonnement: dan rekenen we met een neutrale invulling
+    var sub = acc.sub || { status: "geen", size: "250", freq: "1m", nextDelivery: new Date().toISOString(), anchor: new Date().toISOString(), skipped: [] };
+    var orders = acc.orders || [];
     var size = CONFIG.sizes[sub.size];
     var freq = CONFIG.freqs[sub.freq];
     var next = new Date(sub.nextDelivery);
@@ -919,8 +1031,8 @@
       persist();
       done(acc);
     }
-    function goCheckout(action) {
-      api("account.php", { action: action }).then(function (d) { location.href = d.checkoutUrl; }).catch(function (err) { toast(err.message); });
+    function goCheckout(action, extra) {
+      api("account.php", Object.assign({ action: action }, extra || {})).then(function (d) { location.href = d.checkoutUrl; }).catch(function (err) { toast(err.message); });
     }
 
     // ---- zijbalk
@@ -973,7 +1085,23 @@
     var bagsShort = sub.size === "500" ? "2×250g" : "250g";
 
     var nextBlock;
-    if (sub.status === "nieuw") {
+    var nextOrder = orders[0];
+    function orderChip(o) {
+      return o.status === "betaald" ? '<span class="chip chip--ok">Betaald</span>'
+        : o.status === "open" ? '<span class="chip chip--warn">Wacht op betaling</span>'
+          : '<span class="chip chip--warn">Niet betaald</span>';
+    }
+    if (!hasSub) {
+      nextBlock = nextOrder
+        ? '<h3>Je losse zak ' + orderChip(nextOrder) + '</h3><div class="big">' + esc(capitalize(dateFmt.format(new Date(nextOrder.date)))) + '</div><p class="muted" style="margin-top:10px">' +
+          (nextOrder.status === "betaald"
+            ? (CONFIG.sizes[nextOrder.size] ? esc(CONFIG.sizes[nextOrder.size].bags) : "Je zak") + " hele bonen, de smaak van de maand. We branden vers voor je en hij valt deze dag door de brievenbus."
+            : nextOrder.status === "open"
+              ? "We hebben je betaling nog niet ontvangen. Heb je net betaald? Ververs de pagina over een minuutje."
+              : "Je betaling is niet afgerond. Rond hem alsnog af, dan gaan we direct voor je branden.") + "</p>" +
+          (nextOrder.status === "onbetaald" ? '<div class="actions"><button class="btn" data-action="retry-order" data-id="' + nextOrder.id + '">Betalen met iDEAL | Wero</button></div>' : "")
+        : '<h3>Geen abonnement</h3><div class="big">Zin in meer?</div><p class="muted" style="margin-top:10px">Met een abonnement krijg je elke maand een nieuwe smaak door de brievenbus, en ' + Math.round(CONFIG.welcomeDiscount * 100) + '% korting op je eerste levering.</p><div class="actions"><a class="btn" href="index.html#abonnement">Start een abonnement</a><a class="btn btn--ghost" href="index.html?ritme=eenmalig#abonnement">Nog een losse zak</a></div>';
+    } else if (sub.status === "nieuw") {
       nextBlock = '<h3>Je abonnement ' + statusChip + '</h3><div class="big">Bijna klaar</div><p class="muted" style="margin-top:10px">' +
         (acc.pendingPayment && acc.pendingPayment.status === "open"
           ? "We hebben je betaling nog niet ontvangen. Heb je net betaald? Dan duurt het soms even. Ververs de pagina over een minuutje."
@@ -1000,12 +1128,15 @@
     $("#tab-overzicht").innerHTML =
       '<span class="kicker">Mijn Khoffie</span>' +
       "<h2>Goedemorgen, " + esc(firstName) + ".</h2>" +
-      '<p class="lead">Alles over je abonnement, leveringen en bonen op één plek.</p>' +
+      '<p class="lead">' + (hasSub ? "Alles over je abonnement, leveringen en bonen op één plek." : "Je bestellingen en bonen op één plek.") + '</p>' +
       '<div class="tiles">' +
       '<div class="tile tile--highlight two3">' + nextBlock + '<img class="mystery-bean" src="assets/img/khoffie-boon.svg" alt=""></div>' +
-      '<div class="tile third"><h3>Jouw abonnement</h3><dl class="kv">' +
-      "<dt>Zak</dt><dd>" + esc(size.label) + "</dd><dt>Ritme</dt><dd>" + esc(freq.label) + "</dd><dt>Bonen</dt><dd>Hele bonen</dd><dt>Prijs</dt><dd>" + eur.format(size.price) + " / levering</dd></dl><p class=\"muted\" style=\"font-size:.85rem;margin:10px 0 0\">Inclusief verzending</p>" +
-      '<div class="actions"><button class="link-arrow" style="background:none;border:0;padding:0;cursor:pointer;color:var(--copper)" data-goto="abonnement">Aanpassen</button></div></div>' +
+      (hasSub
+        ? '<div class="tile third"><h3>Jouw abonnement</h3><dl class="kv">' +
+          "<dt>Zak</dt><dd>" + esc(size.label) + "</dd><dt>Ritme</dt><dd>" + esc(freq.label) + "</dd><dt>Bonen</dt><dd>Hele bonen</dd><dt>Prijs</dt><dd>" + eur.format(size.price) + " / levering</dd></dl><p class=\"muted\" style=\"font-size:.85rem;margin:10px 0 0\">Inclusief verzending</p>" +
+          '<div class="actions"><button class="link-arrow" style="background:none;border:0;padding:0;cursor:pointer;color:var(--copper)" data-goto="abonnement">Aanpassen</button><a class="link-arrow" style="color:var(--copper)" href="index.html?ritme=eenmalig#abonnement">Losse zak bestellen</a></div></div>'
+        : '<div class="tile third"><h3>Losse zakken</h3><div class="big">' + (acc.deliveries.filter(function (d) { return d.oneoff; }).length + orders.filter(function (o) { return o.status === "betaald"; }).length) + ' <small>besteld</small></div><p class="muted" style="margin:8px 0 0">Je hebt geen abonnement. Een losse zak bestel je wanneer je wilt.</p>' +
+          '<div class="actions"><a class="link-arrow" style="color:var(--copper)" href="index.html?ritme=eenmalig#abonnement">Losse zak bestellen</a></div></div>') +
       '<div class="tile third"><h3>Bonenpaspoort</h3><div class="big">' + allBatches.length + " <small>" + (allBatches.length === 1 ? "smaak" : "smaken") + "</small></div>" +
       '<p class="muted" style="margin:8px 0 0">' + countries.length + " " + (countries.length === 1 ? "land" : "landen") + " geproefd · " + rated + " beoordeeld</p>" +
       '<div class="progress" aria-hidden="true"><i style="width:' + Math.min(100, (countries.length / kaartTotal()) * 100) + '%"></i></div><p class="muted" style="font-size:.85rem;margin:0">' + countries.length + " van " + kaartTotal() + " koffielanden ontdekt</p>" +
@@ -1020,6 +1151,13 @@
 
     // ---- ABONNEMENT
     var paused = sub.status === "gepauzeerd";
+    if (!hasSub) {
+      $("#tab-abonnement").innerHTML =
+        '<span class="kicker">Abonnement</span><h2>Nog geen abonnement</h2>' +
+        '<p class="lead">Je bestelt nu losse zakken. Met een abonnement krijg je elke maand vanzelf een nieuwe smaak, en zie je hier je planning.</p>' +
+        '<div class="tiles"><div class="tile"><h3>Abonnement starten</h3><p class="muted">250 of 500 gram, 1× of 2× per maand. Geen vaste looptijd: pauzeren, overslaan of stoppen doe je zelf. Je krijgt ' + Math.round(CONFIG.welcomeDiscount * 100) + '% korting op je eerste levering.</p><div class="actions"><a class="btn" href="index.html#abonnement">Start een abonnement</a></div></div>' +
+        '<div class="tile"><h3>Nog een losse zak</h3><p class="muted">Gewoon één keer de smaak van de maand, zonder abonnement en zonder machtiging.</p><div class="actions"><a class="btn btn--ghost" href="index.html?ritme=eenmalig#abonnement">Losse zak bestellen</a></div></div></div>';
+    } else {
     $("#tab-abonnement").innerHTML =
       '<span class="kicker">Abonnement</span><h2>Jouw abonnement</h2>' +
       '<p class="lead">Pas je zak, ritme of smaakvoorkeur aan wanneer je wilt. Wijzigingen die je tot 7 dagen voor een levering doorgeeft, gelden al voor die levering.</p>' +
@@ -1055,16 +1193,25 @@
         ? "Opgeslagen! Je levering van " + dateFmt.format(next) + " wordt al gebrand, dus dit geldt vanaf " + dateFmt.format(nextAfter(sub, next)) + "."
         : "Opgeslagen! Geldt vanaf je volgende levering.", function () { openTab("abonnement"); });
     });
+    }
 
     // ---- LEVERINGEN
-    var upcoming = sub.status === "opgezegd"
-      ? (sub.lastDelivery && new Date(sub.lastDelivery) >= today ? schedule(sub, new Date(sub.lastDelivery), 1) : [])
-      : schedule(sub, next, 4);
+    var upcoming = !hasSub || sub.status === "nieuw" ? []
+      : sub.status === "opgezegd"
+        ? (sub.lastDelivery && new Date(sub.lastDelivery) >= today ? schedule(sub, new Date(sub.lastDelivery), 1) : [])
+        : schedule(sub, next, 4);
+    var orderRows = orders.map(function (o) {
+      var bags = CONFIG.sizes[o.size] ? CONFIG.sizes[o.size].bags : "";
+      var st = o.status === "betaald"
+        ? (today > deadlineFor(new Date(o.date)) ? '<span class="chip chip--copper">Wordt gebrand</span>' : '<span class="chip chip--ok">Betaald</span>')
+        : orderChip(o) + (o.status === "onbetaald" ? ' <button class="link-arrow" style="background:none;border:0;padding:0;cursor:pointer;color:var(--copper-deep)" data-action="retry-order" data-id="' + o.id + '">Alsnog betalen</button>' : "");
+      return "<tr><td>" + esc(capitalize(dateFmt.format(new Date(o.date)))) + "</td><td>Losse zak</td><td>" + esc(bags) + " hele bonen</td><td>" + eur.format(o.price) + "</td><td>" + st + "</td></tr>";
+    });
     $("#tab-leveringen").innerHTML =
       '<span class="kicker">Leveringen</span><h2>Leveringen</h2>' +
       '<p class="lead">Wat eraan komt en wat je al hebt gehad. Elke maand een nieuwe batch, met een eigen batchnummer.</p>' +
       '<h3 style="margin:0 0 12px">Gepland</h3>' +
-      (upcoming.length
+      (upcoming.length || orderRows.length
         ? '<div class="table-wrap" style="margin-bottom:32px"><table class="table"><thead><tr><th>Datum</th><th>Smaak</th><th>Inhoud</th><th>Bedrag</th><th>Status</th></tr></thead><tbody>' +
         upcoming.map(function (u, i) {
           var d = u.date;
@@ -1072,16 +1219,16 @@
             : today > deadlineFor(d) ? '<span class="chip chip--copper">Wordt gebrand</span>'
               : '<span class="chip">Gepland</span>';
           return "<tr><td>" + esc(capitalize(dateFmt.format(d))) + "</td><td>" + (u.newFlavour ? "Nieuwe smaak" : "Zelfde als vorige") + "</td><td>" + esc(size.bags) + " hele bonen</td><td>" + eur.format(size.price) + "</td><td>" + status + "</td></tr>";
-        }).join("") + "</tbody></table></div>"
+        }).join("") + orderRows.join("") + "</tbody></table></div>"
         : '<p class="muted" style="margin-bottom:32px">Geen geplande leveringen.</p>') +
       '<h3 style="margin:0 0 12px">Geschiedenis</h3>' +
       (acc.deliveries.length
         ? '<div class="table-wrap"><table class="table"><thead><tr><th>Datum</th><th>Batch</th><th>Herkomst</th><th>Inhoud</th><th>Status</th></tr></thead><tbody>' +
         acc.deliveries.slice().reverse().map(function (d) {
-          return "<tr><td>" + dateShort.format(new Date(d.date)) + "</td><td>" + esc(d.batch) + "</td><td>" + esc(d.country) + " · " + esc(d.region) + "</td><td>" + esc(CONFIG.sizes[d.size].bags) + " hele bonen" + '</td><td><span class="chip chip--ok">Bezorgd</span>' +
+          return "<tr><td>" + dateShort.format(new Date(d.date)) + "</td><td>" + esc(d.batch) + (d.oneoff ? '<div class="muted" style="font-size:.85rem">losse zak</div>' : "") + "</td><td>" + esc(d.country) + " · " + esc(d.region) + "</td><td>" + esc(CONFIG.sizes[d.size].bags) + " hele bonen" + '</td><td><span class="chip chip--ok">Bezorgd</span>' +
             (d.tracking && d.tracking.length ? d.tracking.map(function (t, i) { return ' <a href="' + esc(t) + '" target="_blank" rel="noopener">Volg' + (d.tracking.length > 1 ? " " + (i + 1) : "") + "</a>"; }).join("") : "") + '</td></tr>';
         }).join("") + "</tbody></table></div>"
-        : '<p class="muted">Nog geen leveringen. Je eerste zak is in de maak!</p>') +
+        : '<p class="muted">Nog geen leveringen.' + (hasSub || orders.length ? " Je eerste zak is in de maak!" : "") + '</p>') +
       '<p class="muted" style="margin-top:20px;font-size:.93rem">Iets mis met een levering? <a href="klantenservice.html#contact">Laat het ons weten</a>, dan lossen we het op.</p>';
 
     // ---- PASPOORT
@@ -1112,12 +1259,14 @@
     $("#tab-betalingen").innerHTML =
       '<span class="kicker">Betalingen</span><h2>Betalingen & facturen</h2>' +
       '<p class="lead">We rekenen pas af als je zak onderweg is. Alle bedragen zijn inclusief btw en verzending.</p>' +
-      '<div class="tiles" style="margin-bottom:24px"><div class="tile"><h3>Betaalmethode</h3><div class="big" style="font-size:2rem">' + esc(CONFIG.pay) + '</div><p class="muted" style="margin:8px 0 0">Via Mollie. Je eerste betaling deed je met iDEAL | Wero; volgende leveringen schrijven we automatisch af van dezelfde rekening' + (sub.account ? " (" + esc(sub.account) + ")" : live ? "" : " (NL•• •••• •••• •••• 42)") + '.</p>' + (acc.credit ? '<p class=\"muted\" style=\"margin:8px 0 0\">Tegoed: <strong>' + eur.format(acc.credit) + '</strong>, verrekenen we met je volgende levering.</p>' : '') + '<div class="actions"><button class="btn btn--ghost btn--small" data-action="change-pay">Andere rekening koppelen</button></div></div>' +
+      '<div class="tiles" style="margin-bottom:24px"><div class="tile"><h3>Betaalmethode</h3><div class="big" style="font-size:2rem">' + esc(CONFIG.pay) + '</div>' + (hasSub
+        ? '<p class="muted" style="margin:8px 0 0">Via Mollie. Je eerste betaling deed je met iDEAL | Wero; volgende leveringen schrijven we automatisch af van dezelfde rekening' + (sub.account ? " (" + esc(sub.account) + ")" : live ? "" : " (NL•• •••• •••• •••• 42)") + '.</p>' + (acc.credit ? '<p class=\"muted\" style=\"margin:8px 0 0\">Tegoed: <strong>' + eur.format(acc.credit) + '</strong>, verrekenen we met je volgende levering.</p>' : '') + '<div class="actions"><button class="btn btn--ghost btn--small" data-action="change-pay">Andere rekening koppelen</button></div></div>'
+        : '<p class="muted" style="margin:8px 0 0">Via Mollie. Een losse zak betaal je per bestelling met iDEAL | Wero. Er is geen machtiging: we schrijven nooit automatisch af.</p></div>') +
       '<div class="tile"><h3>Totaal besteed</h3><div class="big">' + eur.format(acc.deliveries.reduce(function (s, d) { return s + d.price; }, 0)) + '</div><p class="muted" style="margin:8px 0 0">Aan ' + acc.deliveries.length + " leveringen vers gebrande koffie, verzending inbegrepen.</p></div></div>" +
       (invoices.length
         ? '<div class="table-wrap"><table class="table"><thead><tr><th>Factuur</th><th>Datum</th><th>Omschrijving</th><th>Bedrag</th><th>Status</th><th></th></tr></thead><tbody>' +
         invoices.map(function (d, i) {
-          return "<tr><td>F" + (2400 + invoices.length - i) + "</td><td>" + dateShort.format(new Date(d.date)) + "</td><td>" + esc(CONFIG.sizes[d.size].label) + " koffie · batch " + esc(d.batch) + "</td><td>" + eur.format(d.price) + '</td><td><span class="chip chip--ok">Betaald</span></td><td>' + (live && d.invoice ? '<a href="api/factuur.php?id=' + d.invoice + '" target="_blank" rel="noopener">Factuur</a>' : '<a href="#" data-action="invoice">PDF</a>') + '</td></tr>';
+          return "<tr><td>F" + (2400 + invoices.length - i) + "</td><td>" + dateShort.format(new Date(d.date)) + "</td><td>" + (d.oneoff ? "Losse zak " + esc(CONFIG.sizes[d.size].label) : esc(CONFIG.sizes[d.size].label) + " koffie") + " · batch " + esc(d.batch) + "</td><td>" + eur.format(d.price) + '</td><td><span class="chip chip--ok">Betaald</span></td><td>' + (live && d.invoice ? '<a href="api/factuur.php?id=' + d.invoice + '" target="_blank" rel="noopener">Factuur</a>' : '<a href="#" data-action="invoice">PDF</a>') + '</td></tr>';
         }).join("") + "</tbody></table></div>"
         : '<p class="muted">Nog geen facturen.</p>');
 
@@ -1203,6 +1352,11 @@
         return;
       }
       if (action === "retry-payment") { goCheckout("retry-payment"); return; }
+      if (action === "retry-order") {
+        if (live) goCheckout("retry-order", { id: +btn.getAttribute("data-id") });
+        else toast("In het voorbeeld wordt niets afgerekend.");
+        return;
+      }
       if (action === "copy-ref") {
         var input = btn.parentNode.querySelector("input");
         if (navigator.clipboard) navigator.clipboard.writeText(input.value).catch(function () {});

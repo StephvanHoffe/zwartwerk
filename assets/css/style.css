@@ -813,7 +813,7 @@ a.card-link:hover { color: var(--navy); transform: translateY(-3px); box-shadow:
 .bean-card .roast-scale span { width: 40px; font-size: 0.58rem; }
 .bean-card .roast-scale span::before { width: 18px; height: 18px; }
 .stars { display: flex; gap: 2px; margin-top: auto; padding-top: 10px; border-top: 2px solid var(--line); align-items: center; }
-.stars .lbl { margin-right: auto; }
+.stars .lbl { margin-right: auto; white-space: nowrap; padding-right: 8px; }
 .stars button { background: none; border: 0; padding: 2px; cursor: pointer; color: #dfd6ca; }
 .stars button svg { width: 26px; height: 26px; }
 .stars button.on { color: var(--yellow); }

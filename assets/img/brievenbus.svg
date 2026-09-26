@@ -1,29 +1,29 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 320" fill="none" stroke-linecap="round" stroke-linejoin="round">
   <title>Illustratie van een koffiezak die door de brievenbus gaat</title>
   <!-- deur -->
-  <rect x="40" y="10" width="340" height="310" rx="6" stroke="#f3e6d2" stroke-width="3" opacity=".35"/>
-  <path d="M40 60h340M40 270h340" stroke="#f3e6d2" stroke-width="2" opacity=".15"/>
+  <rect x="40" y="10" width="340" height="310" rx="6" fill="#F37D7B" fill-opacity=".35" stroke="#1A3C9E" stroke-width="3" opacity=".35"/>
+  <path d="M40 60h340M40 270h340" stroke="#1A3C9E" stroke-width="2" opacity=".15"/>
   <!-- bewegingslijnen -->
-  <g stroke="#e28a56" stroke-width="3">
+  <g stroke="#F26B2A" stroke-width="3">
     <path d="M150 24v22M210 12v28M270 24v22"/>
   </g>
   <!-- zak (bovenste deel steekt uit) -->
   <g transform="rotate(-4 210 140)">
-    <path d="M152 58h116l4 120H148z" fill="#1e1b19" stroke="#f3e6d2" stroke-width="3"/>
-    <path d="M156 74h108" stroke="#f3e6d2" stroke-width="2" opacity=".5"/>
-    <path d="M166 104h26M228 104h26" stroke="#e28a56" stroke-width="3"/>
-    <ellipse cx="210" cy="104" rx="10" ry="13" fill="#e28a56"/>
-    <path d="M213 92c-6 6 2 12-4 24" stroke="#1e1b19" stroke-width="2.5"/>
-    <path d="M168 132h84M176 144h68" stroke="#f3e6d2" stroke-width="5" opacity=".9"/>
-    <path d="M160 166c20-10 60-14 100-4" stroke="#e28a56" stroke-width="3" opacity=".8"/>
+    <path d="M152 58h116l4 120H148z" fill="#FBF3E9" stroke="#1A3C9E" stroke-width="3"/>
+    <path d="M156 74h108" stroke="#1A3C9E" stroke-width="2" opacity=".5"/>
+    <path d="M166 104h26M228 104h26" stroke="#F26B2A" stroke-width="3"/>
+    <ellipse cx="210" cy="104" rx="10" ry="13" fill="#F26B2A"/>
+    <path d="M213 92c-6 6 2 12-4 24" stroke="#FBF3E9" stroke-width="2.5"/>
+    <path d="M168 132h84M176 144h68" stroke="#1A3C9E" stroke-width="5" opacity=".9"/>
+    <path d="M160 166c20-10 60-14 100-4" stroke="#F26B2A" stroke-width="3" opacity=".8"/>
   </g>
   <!-- brievenbusplaat -->
-  <rect x="96" y="160" width="228" height="70" rx="12" fill="#24211e" stroke="#f3e6d2" stroke-width="3"/>
-  <rect x="120" y="176" width="180" height="16" rx="6" fill="#121110" stroke="#f3e6d2" stroke-width="2"/>
-  <path d="M150 212h120" stroke="#f3e6d2" stroke-width="2" opacity=".4"/>
-  <circle cx="108" cy="172" r="3" fill="#f3e6d2"/><circle cx="312" cy="172" r="3" fill="#f3e6d2"/>
-  <circle cx="108" cy="218" r="3" fill="#f3e6d2"/><circle cx="312" cy="218" r="3" fill="#f3e6d2"/>
+  <rect x="96" y="160" width="228" height="70" rx="12" fill="#F8B625" stroke="#1A3C9E" stroke-width="3"/>
+  <rect x="120" y="176" width="180" height="16" rx="6" fill="#1A3C9E" stroke="#1A3C9E" stroke-width="2"/>
+  <path d="M150 212h120" stroke="#1A3C9E" stroke-width="2" opacity=".4"/>
+  <circle cx="108" cy="172" r="3" fill="#1A3C9E"/><circle cx="312" cy="172" r="3" fill="#1A3C9E"/>
+  <circle cx="108" cy="218" r="3" fill="#1A3C9E"/><circle cx="312" cy="218" r="3" fill="#1A3C9E"/>
   <!-- deurklink -->
-  <path d="M330 266h26" stroke="#f3e6d2" stroke-width="5"/>
-  <circle cx="330" cy="266" r="8" stroke="#f3e6d2" stroke-width="3"/>
+  <path d="M330 266h26" stroke="#1A3C9E" stroke-width="5"/>
+  <circle cx="330" cy="266" r="8" stroke="#1A3C9E" stroke-width="3"/>
 </svg>

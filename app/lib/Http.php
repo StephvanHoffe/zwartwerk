@@ -23,14 +23,14 @@ final class Http
 
     /**
      * Leest de JSON-body van een POST vanaf onze eigen website.
-     * De eigen header X-Zwartwerk voorkomt dat andere sites namens een ingelogde klant iets kunnen posten (CSRF).
+     * De eigen header X-Khoffie voorkomt dat andere sites namens een ingelogde klant iets kunnen posten (CSRF).
      */
     public static function input(): array
     {
         if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {
             self::error('Methode niet toegestaan', 405);
         }
-        if (($_SERVER['HTTP_X_ZWARTWERK'] ?? '') !== '1') {
+        if (($_SERVER['HTTP_X_KHOFFIE'] ?? '') !== '1') {
             self::error('Ongeldig verzoek', 400);
         }
         $data = json_decode(file_get_contents('php://input') ?: '', true);

@@ -1,4 +1,4 @@
-# Zwartwerk online zetten (Vimexx / DirectAdmin)
+# Khoffie online zetten (Vimexx / DirectAdmin)
 
 Deze handleiding zet de website, het klantaccount, de betalingen (Mollie) en het beheer live op je Vimexx-hosting. Reken op ongeveer een uur. Doe alles eerst in **testmodus** (Mollie test-sleutel), dan wordt er niets echt afgeschreven.
 
@@ -75,7 +75,7 @@ De cronjob zet elke levering 7 dagen van tevoren vast, schrijft dan af en laat p
 
 ## 8. Sendcloud
 
-1. Sendcloud → **Instellingen → Integraties** → zoek **Sendcloud API** → **Verbinden**. Geef het een naam, bijv. "Zwartwerk website".
+1. Sendcloud → **Instellingen → Integraties** → zoek **Sendcloud API** → **Verbinden**. Geef het een naam, bijv. "Khoffie website".
 2. Vink **Webhook** aan en vul in: `https://www.zwartwerkkoffie.nl/api/sendcloud-webhook.php`
 3. Kopieer de **Public key** en **Secret key** naar `config.php`.
 4. Controleer bij **Instellingen → Afzenderadressen** dat je afzenderadres (Baarn) klopt.

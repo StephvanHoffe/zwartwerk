@@ -201,7 +201,7 @@ layout_start($user['first_name'] . ' ' . $user['last_name'], 'klanten');
     <tbody>
     <?php foreach ($deliveries as $d): $parcels = $d['sendcloud_parcels'] ? (json_decode($d['sendcloud_parcels'], true) ?: []) : []; ?>
       <tr>
-        <td class="nowrap"><?= e(nl_date($d['delivery_date'], true)) ?><div class="muted small">ZW-<?= (int) $d['id'] ?></div></td>
+        <td class="nowrap"><?= e(nl_date($d['delivery_date'], true)) ?><div class="muted small">KH-<?= (int) $d['id'] ?></div></td>
         <td><?= (int) $d['bags'] ?> zak(ken)<?= $d['new_flavour'] ? '' : '<div class="muted small">2e van de maand</div>' ?></td>
         <td>
           <form method="post" class="inline-form"><?= csrf_field() ?><input type="hidden" name="id" value="<?= $id ?>"><input type="hidden" name="action" value="batch"><input type="hidden" name="delivery_id" value="<?= (int) $d['id'] ?>">

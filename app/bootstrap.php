@@ -1,6 +1,6 @@
 <?php
 /*
- * Zwartwerk — gedeelde basis voor API, beheer en cron.
+ * Khoffie — gedeelde basis voor API, beheer en cron.
  */
 declare(strict_types=1);
 

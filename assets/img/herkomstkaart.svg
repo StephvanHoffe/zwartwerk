@@ -1,12 +1,12 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 339">
 <title>Wereldkaart met de koffiegordel en de landen waar onze bonen vandaan komen</title><style>
-.om-land circle{fill:#f3e6d2;opacity:.26}
-.om-hot circle{fill:#e28a56}
-.om-belt{fill:#e28a56;opacity:.06}
-.om-tropic{stroke:#e28a56;stroke-opacity:.45;stroke-dasharray:4 6;stroke-width:1}
-.om-label{font:600 13px "Arial Narrow",Arial,sans-serif;letter-spacing:3px;text-transform:uppercase;fill:#e28a56}
-.om-pin circle{fill:#f3e6d2}
-.om-pin .om-ring{fill:none;stroke:#f3e6d2;stroke-width:1.6;opacity:.8}
+.om-land circle{fill:#1A3C9E;opacity:.2}
+.om-hot circle{fill:#F26B2A}
+.om-belt{fill:#F8B625;opacity:.22}
+.om-tropic{stroke:#F8B625;stroke-opacity:.9;stroke-dasharray:4 6;stroke-width:1}
+.om-label{font:700 13px Arial,sans-serif;letter-spacing:3px;text-transform:uppercase;fill:#1A3C9E}
+.om-pin circle{fill:#1A3C9E}
+.om-pin .om-ring{fill:none;stroke:#1A3C9E;stroke-width:1.6;opacity:.8}
 </style>
 <line x1="0" x2="1000" y1="134.9" y2="134.9" class="om-tropic"/>
 <line x1="0" x2="1000" y1="265.1" y2="265.1" class="om-tropic"/>

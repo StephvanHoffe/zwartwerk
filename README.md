@@ -1,14 +1,14 @@
-# Zwartwerk — website
+# Khoffie — website
 
-Website voor **Zwartwerk**, een kleinschalige koffiebranderij uit Baarn met een abonnement waarbij je elke maand een nieuwe verrassingssmaak krijgt (nooit twee keer dezelfde).
+Website voor **Khoffie**, een kleinschalige koffiebranderij uit Baarn met een abonnement waarbij je elke maand een nieuwe verrassingssmaak krijgt (nooit twee keer dezelfde).
 
 ## Pagina's
 
 | Pagina | Wat staat erop |
 | --- | --- |
 | `index.html` | Home met alles om een abonnement af te sluiten: hero, uitleg in 4 stappen, "bewuste keuze", uitleg van het etiket, **abonnement-configurator** (hoeveelheid, ritme, smaak, adres, betalen met iDEAL \| Wero) met live prijsoverzicht, herkomstkaart, korte FAQ |
-| `hoe-het-werkt.html` | Stap-voor-stap uitleg, flexibiliteit, brievenbus-uitleg, **herkomstlanden** (kaart + 12 landen), waarom Zwartwerk anders is, bewaartips |
-| `over-ons.html` | Het verhaal van Zwartwerk, de naam, waarden, proces en bedrijfsgegevens |
+| `hoe-het-werkt.html` | Stap-voor-stap uitleg, flexibiliteit, brievenbus-uitleg, **herkomstlanden** (kaart + 12 landen), waarom Khoffie anders is, bewaartips |
+| `over-ons.html` | Het verhaal van Khoffie, de naam, waarden, proces en bedrijfsgegevens |
 | `klantenservice.html` | Snelkoppelingen, FAQ met zoekfunctie en categorieën, contactgegevens en contactformulier (opent het mailprogramma) |
 | `account.html` | Inloggen + accountomgeving: overzicht, abonnement wijzigen, leveringen, bonenpaspoort (met beoordelingen), betalingen/facturen en gegevens |
 | `algemene-voorwaarden.html`, `privacy.html`, `cookies.html` | Juridische pagina's |

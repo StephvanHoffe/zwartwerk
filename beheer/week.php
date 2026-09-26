@@ -46,7 +46,7 @@ if (($_GET['export'] ?? '') === 'csv') {
     $onlyFixed = ($_GET['alleen'] ?? '') === 'vast';
     $exp = array_filter($list, fn($r) => $r['status'] !== 'geannuleerd' && (!$onlyFixed || !$r['projected']));
     header('Content-Type: text/csv; charset=utf-8');
-    header('Content-Disposition: attachment; filename="zwartwerk-week-' . $monday->format('o-\WW') . '.csv"');
+    header('Content-Disposition: attachment; filename="khoffie-week-' . $monday->format('o-\WW') . '.csv"');
     echo Deliveries::csv($exp);
     exit;
 }
@@ -109,7 +109,7 @@ layout_start('Verzendlijst', 'week');
       <?php endif; ?>
         <tr class="<?= $r['projected'] ? 'projected' : '' ?>">
           <td><?php if (!$r['projected']): ?><input type="checkbox" class="pick" name="ids[]" value="<?= (int) $r['id'] ?>"<?= $r['status'] === 'geannuleerd' ? ' disabled' : '' ?>><?php endif; ?></td>
-          <td><a href="klant.php?id=<?= (int) $r['user_id'] ?>"><?= e($r['first_name'] . ' ' . $r['last_name']) ?></a><?php if ($r['id']): ?><div class="muted small">ZW-<?= (int) $r['id'] ?></div><?php endif; ?></td>
+          <td><a href="klant.php?id=<?= (int) $r['user_id'] ?>"><?= e($r['first_name'] . ' ' . $r['last_name']) ?></a><?php if ($r['id']): ?><div class="muted small">KH-<?= (int) $r['id'] ?></div><?php endif; ?></td>
           <td class="small"><?= e($r['street'] . ' ' . $r['house_number']) ?><br><?= e($r['postcode'] . ' ' . $r['city']) ?></td>
           <td><?= (int) $r['bags'] ?>×</td>
           <td class="small"><?= $r['batch_code'] ? e($r['batch_code']) . '<br><span class="muted">' . e($r['batch_country']) . '</span>' : '<span class="muted">Smaak ' . e(Format::monthName($r['flavour_month'])) . '</span>' ?>

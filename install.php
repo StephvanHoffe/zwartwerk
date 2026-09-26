@@ -44,10 +44,10 @@ if (!in_array(false, $checks, true)) {
 function h($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8'); }
 ?><!doctype html>
 <html lang="nl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex">
-<title>Installatie — Zwartwerk</title>
+<title>Installatie — Khoffie</title>
 <link rel="stylesheet" href="assets/css/fonts.css"><link rel="stylesheet" href="beheer/beheer.css"></head>
 <body><main class="wrap" style="max-width:640px">
-<img src="assets/img/zwartwerk-logo.png" alt="Zwartwerk" style="width:260px;margin:30px auto;display:block">
+<img src="assets/img/khoffie-logo.svg" alt="Khoffie" style="width:260px;margin:30px auto;display:block">
 <h1>Installatie</h1>
 <div class="panel">
   <h3>Controle</h3>

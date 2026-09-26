@@ -114,7 +114,7 @@ final class Deliveries
         }
         $amount = (int) $d['price_cents'] - (int) $d['discount_cents'];
         $payment = Mollie::createRecurringPayment($user['mollie_customer_id'], $sub['mandate_id'], $amount,
-            'Zwartwerk levering ' . $d['delivery_date'] . ' (' . ($d['size'] === '500' ? '500 g' : '250 g') . ')',
+            'Khoffie levering ' . $d['delivery_date'] . ' (' . ($d['size'] === '500' ? '500 g' : '250 g') . ')',
             ['type' => 'recurring', 'delivery_id' => $deliveryId]);
         q('INSERT INTO payments (user_id, subscription_id, mollie_id, kind, amount_cents, status, description) VALUES (?, ?, ?, "recurring", ?, ?, ?)', [
             $user['id'], $sub['id'], $payment['id'], $amount, $payment['status'] ?? 'pending', $payment['description'] ?? '',
@@ -353,7 +353,7 @@ final class Deliveries
                 $p = Sendcloud::createParcel([
                     'name' => $name, 'street' => $d['street'], 'house_number' => $d['house_number'],
                     'postcode' => $d['postcode'], 'city' => $d['city'], 'email' => $d['email'], 'phone' => $d['phone'],
-                ], 'ZW-' . $d['id'] . ($count > 1 ? '-' . $i : ''), $weight);
+                ], 'KH-' . $d['id'] . ($count > 1 ? '-' . $i : ''), $weight);
                 $parcels[] = [
                     'id' => $p['id'] ?? null,
                     'tracking_number' => $p['tracking_number'] ?? '',
@@ -437,7 +437,7 @@ final class Deliveries
         foreach ($rows as $r) {
             fputcsv($fh, [
                 $r['first_name'] . ' ' . $r['last_name'], $r['street'], $r['house_number'], $r['postcode'], $r['city'], 'NL',
-                $r['email'], $r['phone'], $r['id'] ? 'ZW-' . $r['id'] : 'voorlopig',
+                $r['email'], $r['phone'], $r['id'] ? 'KH-' . $r['id'] : 'voorlopig',
                 number_format((float) cfg('sendcloud.weight_per_bag_kg', 0.3) * (int) $r['bags'], 3, '.', ''),
                 $r['bags'], $r['batch_code'] ?: ('smaak ' . $r['flavour_month']), $r['delivery_date'], self::statusLabel($r['status']),
             ], ';', '"', '');

@@ -42,7 +42,7 @@ if (is_post()) {
 
 if (($_GET['export'] ?? '') === 'nieuwsbrief') {
     header('Content-Type: text/csv; charset=utf-8');
-    header('Content-Disposition: attachment; filename="zwartwerk-nieuwsbrief.csv"');
+    header('Content-Disposition: attachment; filename="khoffie-nieuwsbrief.csv"');
     echo "\xEF\xBB\xBFe-mail;naam;bron;datum\n";
     foreach (rows('SELECT email, "" AS name, "website" AS src, created_at FROM newsletter
                    UNION SELECT email, CONCAT(first_name, " ", last_name), "klant", created_at FROM users WHERE newsletter = 1') as $r) {

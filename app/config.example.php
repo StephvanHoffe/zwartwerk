@@ -1,6 +1,6 @@
 <?php
 /*
- * Zwartwerk — configuratie
+ * Khoffie — configuratie
  *
  * Kopieer dit bestand naar app/config.php en vul je eigen gegevens in.
  * config.php staat NIET in git: zet je sleutels nooit in de code of in een chat.
@@ -40,7 +40,7 @@ return [
     // E-mail
     'mail' => [
         'from' => 'info@zwartwerkkoffie.nl',
-        'from_name' => 'Zwartwerk',
+        'from_name' => 'Khoffie',
         'admin_to' => 'info@zwartwerkkoffie.nl', // melding bij nieuwe abonnees en mislukte betalingen
         'enabled' => true,                        // false = mails alleen loggen (om te testen)
     ],

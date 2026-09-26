@@ -1,5 +1,5 @@
 /* ==========================================================================
-   Zwartwerk — sitescript
+   Khoffie — sitescript
    Let op: dit is een front-end prototype. Abonnementen en accounts worden
    in de browser (localStorage) bewaard. Voor livegang koppelen aan een
    echte backend + betaalprovider (bijv. Mollie). Zie README.md.
@@ -94,7 +94,12 @@
     return: '<path d="M9 14L4 9l5-5"/><path d="M4 9h11a5 5 0 010 10h-3"/>',
     edit: '<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/>',
     heart: '<path d="M12 20s-7.5-4.5-7.5-10A4.5 4.5 0 0112 7.2 4.5 4.5 0 0119.5 10c0 5.5-7.5 10-7.5 10z"/>',
-    skip: '<path d="M5 5l9 7-9 7zM18 5v14"/>'
+    skip: '<path d="M5 5l9 7-9 7zM18 5v14"/>',
+    // gevulde iconen zoals op de achterkant van de zak
+    "leaf-fill": '<path d="M12 21.5c-.4-3.2-2-5.3-4.8-6.4C3.9 13.8 3 10.6 3.4 6.6c3.9.2 6.8 1.7 8.1 5 1.2-4.5 4-7.3 8.6-8.1.6 4.8-.6 8.6-4.3 11.2-1.6 1.1-2.6 3.2-2.9 6.8z" fill="currentColor" stroke="none"/>',
+    dots: '<circle cx="12" cy="7" r="4" fill="currentColor" stroke="none"/><circle cx="7" cy="16" r="4" fill="currentColor" stroke="none"/><circle cx="17" cy="16" r="4" fill="currentColor" stroke="none"/>',
+    "sun-half": '<path d="M2 18a10 10 0 0120 0z" fill="currentColor" stroke="none"/>',
+    "heart-fill": '<path d="M12 21s-8.5-5.2-8.5-11.2A4.8 4.8 0 0112 7a4.8 4.8 0 018.5 2.8C20.5 15.8 12 21 12 21z" fill="currentColor" stroke="none"/>'
   };
   (function injectSprite() {
     var s = '<svg xmlns="http://www.w3.org/2000/svg" style="display:none" aria-hidden="true">';
@@ -157,7 +162,7 @@
     if (body) {
       opts.method = "POST";
       opts.headers["Content-Type"] = "application/json";
-      opts.headers["X-Zwartwerk"] = "1";
+      opts.headers["X-Khoffie"] = "1";
       opts.body = JSON.stringify(body);
     }
     return fetch("api/" + path, opts).then(function (r) {
@@ -401,7 +406,7 @@
       if (!code) { referralOk = false; refMsg.textContent = ""; update(); return; }
       var check = LIVE
         ? api("referral.php?code=" + encodeURIComponent(code)).then(function (d) { return d.valid; })
-        : Promise.resolve(/^ZW-[A-Z]{1,6}\d{3}$/.test(code));
+        : Promise.resolve(/^KH-[A-Z]{1,6}\d{3}$/.test(code));
       check.then(function (valid) {
         referralOk = valid;
         refMsg.textContent = valid ? "Code geldig: 50% korting op je eerste levering!" : "Deze code kennen we niet.";
@@ -471,7 +476,7 @@
           note: ""
         },
         deliveries: existing ? existing.deliveries : [],
-        referral: "ZW-" + String(fd.get("firstname")).trim().toUpperCase().replace(/[^A-Z]/g, "").slice(0, 5) + Math.floor(100 + Math.random() * 900)
+        referral: "KH-" + String(fd.get("firstname")).trim().toUpperCase().replace(/[^A-Z]/g, "").slice(0, 5) + Math.floor(100 + Math.random() * 900)
       };
       saveAccount(acc);
       login(email);
@@ -583,7 +588,7 @@
       var o = ORIGINS[s.period % ORIGINS.length];
       var m = s.flavourMonth;
       return {
-        batch: "ZW-" + (m.getFullYear() % 100) + String(m.getMonth() + 1).padStart(2, "0") + "-" + (12 + s.period * 3),
+        batch: "KH-" + (m.getFullYear() % 100) + String(m.getMonth() + 1).padStart(2, "0") + "-" + (12 + s.period * 3),
         date: s.date.toISOString(),
         country: o.country, region: o.region, farm: o.farm, process: o.process, notes: o.notes, roast: o.roast,
         size: "500", grind: "bonen", price: i === 0 ? 29 * (1 - CONFIG.welcomeDiscount) : 29,
@@ -601,7 +606,7 @@
       newsletter: true,
       sub: sub,
       deliveries: deliveries,
-      referral: "ZW-SAM482"
+      referral: "KH-SAM482"
     };
   }
 
@@ -832,11 +837,11 @@
     }
 
     $("#tab-overzicht").innerHTML =
-      '<span class="kicker">Mijn Zwartwerk</span>' +
+      '<span class="kicker">Mijn Khoffie</span>' +
       "<h2>Goedemorgen, " + esc(firstName) + ".</h2>" +
       '<p class="lead">Alles over je abonnement, leveringen en bonen op één plek.</p>' +
       '<div class="tiles">' +
-      '<div class="tile tile--highlight two3">' + nextBlock + '<img class="mystery-bean" src="assets/img/zwartwerk-boon.png" alt=""></div>' +
+      '<div class="tile tile--highlight two3">' + nextBlock + '<img class="mystery-bean" src="assets/img/khoffie-boon.svg" alt=""></div>' +
       '<div class="tile third"><h3>Jouw abonnement</h3><dl class="kv">' +
       "<dt>Zak</dt><dd>" + esc(size.label) + "</dd><dt>Ritme</dt><dd>" + esc(freq.label) + "</dd><dt>Bonen</dt><dd>Hele bonen</dd><dt>Profiel</dt><dd>" + esc(CONFIG.roasts[sub.roast]) + "</dd><dt>Prijs</dt><dd>" + eur.format(size.price) + " / levering</dd></dl><p class=\"muted\" style=\"font-size:.85rem;margin:10px 0 0\">Inclusief verzending</p>" +
       '<div class="actions"><button class="link-arrow" style="background:none;border:0;padding:0;cursor:pointer;color:var(--copper)" data-goto="abonnement">Aanpassen</button></div></div>' +
@@ -937,7 +942,7 @@
             [1, 2, 3, 4, 5].map(function (n) { return '<button type="button" class="' + (n <= d.rating ? "on" : "") + '" data-rate="' + esc(d.batch) + ":" + n + '" aria-label="' + n + ' sterren">' + icon("star") + "</button>"; }).join("") +
             "</div></article>";
         }).join("") + "</div>"
-        : '<div class="panel center"><img src="assets/img/zwartwerk-boon-lijn.png" alt="" style="width:200px;margin:0 auto 18px;opacity:.8"><h3>Je paspoort is nog leeg</h3><p class="muted" style="margin:0">Na je eerste levering verschijnt hier je eerste stempel.</p></div>');
+        : '<div class="panel center"><img src="assets/img/khoffie-boon.svg" alt="" style="width:90px;margin:0 auto 18px"><h3>Je paspoort is nog leeg</h3><p class="muted" style="margin:0">Na je eerste levering verschijnt hier je eerste stempel.</p></div>');
 
     // ---- BETALINGEN
     var invoices = acc.deliveries.slice().reverse();

@@ -11,7 +11,7 @@ final class Mailer
     {
         $sent = false;
         if (cfg('mail.enabled', true)) {
-            $fromName = '=?UTF-8?B?' . base64_encode((string) cfg('mail.from_name', 'Zwartwerk')) . '?=';
+            $fromName = '=?UTF-8?B?' . base64_encode((string) cfg('mail.from_name', 'Khoffie')) . '?=';
             $headers = [
                 'From: ' . $fromName . ' <' . cfg('mail.from') . '>',
                 'Reply-To: ' . cfg('mail.from'),
@@ -34,7 +34,7 @@ final class Mailer
 
     private static function footer(): string
     {
-        return "\n\nKleine oplage. Groot verhaal.\nZwartwerk\n" . cfg('base_url') . "\n" . cfg('mail.from');
+        return "\n\nKleine oplage. Groot verhaal.\nKhoffie\n" . cfg('base_url') . "\n" . cfg('mail.from');
     }
 
     private static function accountUrl(): string
@@ -45,13 +45,13 @@ final class Mailer
     public static function welcome(array $user, array $sub, DateTimeImmutable $first): void
     {
         $body = "Hoi {$user['first_name']},\n\n"
-            . "Welkom bij Zwartwerk! Je betaling is gelukt en je abonnement is actief.\n\n"
+            . "Welkom bij Khoffie! Je betaling is gelukt en je abonnement is actief.\n\n"
             . "Je abonnement: " . ($sub['size'] === '500' ? '500 gram (2 zakken)' : '250 gram') . ', '
             . ($sub['freq'] === '2m' ? '2× per maand' : '1× per maand') . ", altijd hele bonen.\n"
             . "Je eerste zak komt op " . Format::date($first) . ". Welke bonen? Dat blijft een verrassing tot de brievenbus klepert.\n\n"
             . "In je account kun je pauzeren, overslaan, je abonnement aanpassen en je bonen beoordelen:\n" . self::accountUrl()
             . self::footer();
-        self::send($user['email'], 'Welkom bij Zwartwerk ☕', $body);
+        self::send($user['email'], 'Welkom bij Khoffie ☕', $body);
     }
 
     public static function cancelled(array $user, ?DateTimeImmutable $last): void
@@ -67,7 +67,7 @@ final class Mailer
     public static function paymentFailed(array $user, int $cents): void
     {
         $body = "Hoi {$user['first_name']},\n\n"
-            . "Het automatisch afschrijven van " . money($cents) . " voor je volgende Zwartwerk-levering is helaas niet gelukt.\n"
+            . "Het automatisch afschrijven van " . money($cents) . " voor je volgende Khoffie-levering is helaas niet gelukt.\n"
             . "Zolang de betaling openstaat, houden we je zak nog even vast. Log in op je account om het op te lossen, of mail ons:\n"
             . self::accountUrl() . self::footer();
         self::send($user['email'], 'Je betaling is niet gelukt', $body);
@@ -89,7 +89,7 @@ final class Mailer
             . "Je koffie is onderweg naar je brievenbus!\n\n"
             . ($trackingUrls ? "Volg je zending:\n" . implode("\n", $trackingUrls) . "\n\n" : '')
             . "Proef, geniet en vergeet niet je bonen te beoordelen in je bonenpaspoort:\n" . self::accountUrl() . self::footer();
-        self::send($user['email'], 'Je Zwartwerk-koffie is onderweg', $body);
+        self::send($user['email'], 'Je Khoffie is onderweg ☕', $body);
     }
 
     public static function adminNewSubscriber(array $user, array $sub): void

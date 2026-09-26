@@ -1,4 +1,4 @@
--- Zwartwerk database (MySQL 5.7+ / MariaDB 10.3+)
+-- Khoffie database (MySQL 5.7+ / MariaDB 10.3+)
 -- Wordt automatisch uitgevoerd door install.php.
 
 CREATE TABLE IF NOT EXISTS users (
@@ -50,7 +50,7 @@ CREATE TABLE IF NOT EXISTS subscriptions (
 
 CREATE TABLE IF NOT EXISTS batches (
   id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  code VARCHAR(30) NOT NULL UNIQUE,     -- bijv. ZW-2610-01
+  code VARCHAR(30) NOT NULL UNIQUE,     -- bijv. KH-2610-01
   month CHAR(7) NOT NULL,               -- 'YYYY-MM' smaak van de maand
   country VARCHAR(80) NOT NULL,
   region VARCHAR(120) NOT NULL DEFAULT '',

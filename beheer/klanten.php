@@ -22,7 +22,7 @@ $list = rows($sql, $params);
 
 if (($_GET['export'] ?? '') === 'csv') {
     header('Content-Type: text/csv; charset=utf-8');
-    header('Content-Disposition: attachment; filename="zwartwerk-klanten.csv"');
+    header('Content-Disposition: attachment; filename="khoffie-klanten.csv"');
     $fh = fopen('php://output', 'w');
     fwrite($fh, "\xEF\xBB\xBF");
     fputcsv($fh, ['Voornaam', 'Achternaam', 'E-mail', 'Telefoon', 'Straat', 'Huisnummer', 'Postcode', 'Plaats', 'Abonnement', 'Ritme', 'Status', 'Volgende levering', 'Nieuwsbrief', 'Klant sinds'], ';', '"', '');

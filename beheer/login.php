@@ -27,7 +27,7 @@ if (admin()) {
 layout_start('Inloggen');
 ?>
 <div class="login panel">
-  <img src="../assets/img/zwartwerk-logo.png" alt="Zwartwerk">
+  <img src="../assets/img/khoffie-logo.svg" alt="Khoffie">
   <h1 style="text-align:center">Beheer</h1>
   <?php if ($error): ?><div class="flash flash--bad"><?= e($error) ?></div><?php endif; ?>
   <form method="post">

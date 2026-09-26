@@ -107,11 +107,11 @@ function layout_start(string $title, string $active = ''): void
     ];
     $test = str_starts_with((string) cfg('mollie.api_key'), 'test_');
     echo '<!doctype html><html lang="nl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">';
-    echo '<title>' . e($title) . ' — Zwartwerk beheer</title><meta name="robots" content="noindex">';
+    echo '<title>' . e($title) . ' — Khoffie beheer</title><meta name="robots" content="noindex">';
     echo '<link rel="icon" type="image/png" href="../assets/img/favicon.png">';
     echo '<link rel="stylesheet" href="../assets/css/fonts.css"><link rel="stylesheet" href="beheer.css"></head><body>';
     if ($a) {
-        echo '<header class="top"><a class="brand" href="index.php"><img src="../assets/img/zwartwerk-wordmark.png" alt="Zwartwerk"><span>Beheer</span></a>';
+        echo '<header class="top"><a class="brand" href="index.php"><img src="../assets/img/khoffie-logo-licht.svg" alt="Khoffie"><span>Beheer</span></a>';
         echo '<button class="menu-btn" onclick="document.body.classList.toggle(\'nav-open\')" aria-label="Menu">☰</button>';
         echo '<nav>';
         foreach ($nav as $key => [$label, $href]) {

@@ -23,12 +23,18 @@ if (!$allowed) {
 
 function start_admin_session_readonly(): void
 {
+    // Eerst de klantsessie loslaten, anders leest PHP die opnieuw in plaats van de beheersessie
+    $id = (string) ($_COOKIE['zw_admin'] ?? '');
+    if (!preg_match('/^[A-Za-z0-9,-]{16,128}$/', $id)) {
+        return;
+    }
     session_name('zw_admin');
+    session_id($id);
     session_start(['read_and_close' => true]);
 }
 
 $delivery = row('SELECT d.*, b.code FROM deliveries d LEFT JOIN batches b ON b.id = d.batch_id WHERE d.payment_id = ?', [$id]);
-$number = 'ZW' . substr((string) $pay['created_at'], 0, 4) . '-' . str_pad((string) $pay['id'], 5, '0', STR_PAD_LEFT);
+$number = 'KH' . substr((string) $pay['created_at'], 0, 4) . '-' . str_pad((string) $pay['id'], 5, '0', STR_PAD_LEFT);
 $total = (int) $pay['amount_cents'];
 $vat = (int) cfg('vat_pct');
 $excl = (int) round($total / (1 + $vat / 100));
@@ -50,19 +56,22 @@ if ($delivery) {
 <html lang="nl">
 <head>
 <meta charset="utf-8">
-<title>Factuur <?= e($number) ?> — Zwartwerk</title>
+<title>Factuur <?= e($number) ?> — Khoffie</title>
 <meta name="robots" content="noindex">
+<link rel="stylesheet" href="../assets/css/fonts.css">
 <style>
-  body { font-family: "Helvetica Neue", Arial, sans-serif; color: #121110; max-width: 760px; margin: 40px auto; padding: 0 24px; font-size: 15px; line-height: 1.5; }
-  header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 3px solid #e28a56; padding-bottom: 18px; margin-bottom: 28px; }
-  h1 { font-size: 28px; letter-spacing: .04em; margin: 0; }
-  .muted { color: #6b5f52; }
+  body { font-family: "Outfit", "Helvetica Neue", Arial, sans-serif; color: #142e7a; max-width: 760px; margin: 40px auto; padding: 0 24px; font-size: 15px; line-height: 1.5; }
+  header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 4px solid #f26b2a; padding-bottom: 18px; margin-bottom: 28px; }
+  header img { width: 170px; display: block; margin-bottom: 6px; }
+  .tag { text-transform: uppercase; letter-spacing: .2em; font-size: 11px; font-weight: 600; }
+  .muted { color: #5b6592; }
   table { width: 100%; border-collapse: collapse; margin: 24px 0; }
   th, td { text-align: left; padding: 10px 6px; border-bottom: 1px solid #ddd; }
   td.r, th.r { text-align: right; }
   .tot td { border: 0; padding: 4px 6px; }
-  .tot .big td { font-weight: 700; font-size: 17px; border-top: 2px solid #121110; padding-top: 10px; }
-  .print { background: #e28a56; border: 0; padding: 10px 18px; border-radius: 999px; font-weight: 700; cursor: pointer; }
+  .tot .big td { font-weight: 700; font-size: 17px; border-top: 2px solid #142e7a; padding-top: 10px; }
+  th { text-transform: uppercase; letter-spacing: .08em; font-size: 12px; color: #5b6592; }
+  .print { background: #1a3c9e; color: #fff; border: 0; padding: 11px 20px; border-radius: 999px; font-weight: 600; font-family: inherit; cursor: pointer; }
   @media print { .print { display: none; } body { margin: 0; } }
 </style>
 </head>
@@ -70,11 +79,11 @@ if ($delivery) {
 <p><button class="print" onclick="window.print()">Opslaan als PDF / printen</button></p>
 <header>
   <div>
-    <h1>ZWARTWERK</h1>
-    <div class="muted">Koffie uit kleine oplage</div>
+    <img src="../assets/img/khoffie-logo.svg" alt="Khoffie">
+    <div class="tag">Koffie uit kleine oplage</div>
   </div>
   <div class="muted" style="text-align:right">
-    Zwartwerk<br>De Savornin Lohmanlaan 7<br>3741 TW Baarn<br><?= e(cfg('mail.from')) ?><br>KvK 89513908<br>Btw NL004738412B27
+    Khoffie<br>De Savornin Lohmanlaan 7<br>3741 TW Baarn<br><?= e(cfg('mail.from')) ?><br>KvK 89513908<br>Btw NL004738412B27
   </div>
 </header>
 
@@ -106,6 +115,6 @@ if ($delivery) {
   <tr><td class="r">Btw <?= $vat ?>%</td><td class="r"><?= e(money($total - $excl)) ?></td></tr>
   <tr class="big"><td class="r">Totaal</td><td class="r"><?= e(money($total)) ?></td></tr>
 </table>
-<p class="muted">Betaald via Mollie (iDEAL | Wero / automatische incasso). Bedankt dat je Zwartwerk drinkt!</p>
+<p class="muted">Betaald via Mollie (iDEAL | Wero / automatische incasso). Bedankt dat je Khoffie drinkt!</p>
 </body>
 </html>

@@ -66,7 +66,7 @@ if (is_post()) {
 
 $edit = isset($_GET['edit']) ? row('SELECT * FROM batches WHERE id = ?', [(int) $_GET['edit']]) : null;
 $newMonth = preg_match('/^\d{4}-\d{2}$/', (string) ($_GET['new'] ?? '')) ? $_GET['new'] : today()->modify('first day of next month')->format('Y-m');
-$suggest = 'ZW-' . substr(str_replace('-', '', $newMonth), 2) . '-01';
+$suggest = 'KH-' . substr(str_replace('-', '', $newMonth), 2) . '-01';
 $b = $edit ?: ['id' => 0, 'code' => $suggest, 'month' => $newMonth, 'country' => '', 'region' => '', 'farm' => '', 'process' => 'Washed', 'notes' => '', 'roast' => 3, 'roast_date' => '', 'story' => '', 'active' => 1];
 
 $list = rows('SELECT b.*, (SELECT COUNT(*) FROM deliveries d WHERE d.batch_id = b.id) AS deliveries,

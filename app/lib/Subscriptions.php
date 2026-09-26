@@ -146,7 +146,7 @@ final class Subscriptions
         $base = strtoupper(preg_replace('/[^A-Za-z]/', '', iconv('UTF-8', 'ASCII//TRANSLIT', $firstName) ?: 'KOFFIE'));
         $base = substr($base !== '' ? $base : 'KOFFIE', 0, 6);
         do {
-            $code = 'ZW-' . $base . random_int(100, 999);
+            $code = 'KH-' . $base . random_int(100, 999);
         } while (row('SELECT id FROM users WHERE referral_code = ?', [$code]));
         return $code;
     }
@@ -184,7 +184,7 @@ final class Subscriptions
         $deliveryId = (int) db()->lastInsertId();
 
         $payment = Mollie::createFirstPayment($customerId, $amount,
-            'Zwartwerk eerste levering ' . ($sub['size'] === '500' ? '500 g' : '250 g'),
+            'Khoffie eerste levering ' . ($sub['size'] === '500' ? '500 g' : '250 g'),
             rtrim((string) cfg('base_url'), '/') . '/account.html?betaling=terug',
             ['type' => 'first', 'subscription_id' => $sub['id'], 'delivery_id' => $deliveryId]);
 
@@ -201,7 +201,7 @@ final class Subscriptions
         $user = row('SELECT * FROM users WHERE id = ?', [$userId]);
         $sub = self::forUser($userId);
         $customerId = self::mollieCustomer($user);
-        $payment = Mollie::createFirstPayment($customerId, 1, 'Zwartwerk rekening koppelen',
+        $payment = Mollie::createFirstPayment($customerId, 1, 'Khoffie rekening koppelen',
             rtrim((string) cfg('base_url'), '/') . '/account.html?betaling=rekening#betalingen',
             ['type' => 'verify', 'subscription_id' => $sub['id']]);
         q('INSERT INTO payments (user_id, subscription_id, mollie_id, kind, amount_cents, status, description, checkout_url) VALUES (?, ?, ?, "verify", 1, ?, ?, ?)', [

@@ -23,17 +23,16 @@ ErrorDocument 404 /404.html
 <IfModule mod_rewrite.c>
   RewriteEngine On
 
-  # Eén vast adres voor zoekmachines: altijd https://www.khoffie.nl
-  # (Let's Encrypt-controles op /.well-known blijven bereikbaar)
+  # Eén vast adres voor zoekmachines: khoffie.nl gaat naar https://www.khoffie.nl
+  # (http naar https regelt DirectAdmin zelf met "Force SSL"; de server ziet hier
+  # niet betrouwbaar of een bezoek via https binnenkomt)
   RewriteCond %{REQUEST_URI} !^/\.well-known/
-  RewriteCond %{HTTP_HOST} ^khoffie\.nl$ [NC,OR]
-  RewriteCond %{HTTPS} !=on
-  RewriteCond %{HTTP_HOST} ^(www\.)?khoffie\.nl$ [NC]
+  RewriteCond %{HTTP_HOST} ^khoffie\.nl$ [NC]
   RewriteRule ^ https://www.khoffie.nl%{REQUEST_URI} [L,R=301]
 
   # /index.html is dezelfde pagina als / : doorsturen naar /
   RewriteCond %{THE_REQUEST} \s/index\.html[\s?]
-  RewriteRule ^index\.html$ / [L,R=301]
+  RewriteRule ^index\.html$ https://www.khoffie.nl/ [L,R=301]
 </IfModule>
 
 # Sneller laden: tekstbestanden comprimeren

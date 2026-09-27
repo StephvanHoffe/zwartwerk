@@ -21,7 +21,7 @@ switch ($action) {
         Http::json(Subscriptions::account((int) $user['id']));
 
     case 'logout':
-        start_session('zw_sess');
+        start_session('kh_sess');
         $_SESSION = [];
         session_destroy();
         Http::json(['ok' => true]);

@@ -6,35 +6,35 @@ declare(strict_types=1);
 
 date_default_timezone_set('Europe/Amsterdam');
 
-define('ZW_ROOT', dirname(__DIR__));
-define('ZW_APP', __DIR__);
+define('KH_ROOT', dirname(__DIR__));
+define('KH_APP', __DIR__);
 
-if (!is_file(ZW_APP . '/config.php')) {
+if (!is_file(KH_APP . '/config.php')) {
     http_response_code(500);
     exit('Configuratie ontbreekt: kopieer app/config.example.php naar app/config.php en vul die in. Zie INSTALLATIE.md.');
 }
 
-$GLOBALS['ZW_CONFIG'] = require ZW_APP . '/config.php';
+$GLOBALS['KH_CONFIG'] = require KH_APP . '/config.php';
 
-if (!empty($GLOBALS['ZW_CONFIG']['debug'])) {
+if (!empty($GLOBALS['KH_CONFIG']['debug'])) {
     ini_set('display_errors', '1');
     error_reporting(E_ALL);
 } else {
     ini_set('display_errors', '0');
 }
 
-require_once ZW_APP . '/lib/Schedule.php';
-require_once ZW_APP . '/lib/Http.php';
-require_once ZW_APP . '/lib/Mollie.php';
-require_once ZW_APP . '/lib/Sendcloud.php';
-require_once ZW_APP . '/lib/Mailer.php';
-require_once ZW_APP . '/lib/Subscriptions.php';
-require_once ZW_APP . '/lib/Deliveries.php';
+require_once KH_APP . '/lib/Schedule.php';
+require_once KH_APP . '/lib/Http.php';
+require_once KH_APP . '/lib/Mollie.php';
+require_once KH_APP . '/lib/Sendcloud.php';
+require_once KH_APP . '/lib/Mailer.php';
+require_once KH_APP . '/lib/Subscriptions.php';
+require_once KH_APP . '/lib/Deliveries.php';
 
 /** Instelling ophalen met puntnotatie, bijv. cfg('mollie.api_key'). */
 function cfg(string $key, $default = null)
 {
-    $value = $GLOBALS['ZW_CONFIG'];
+    $value = $GLOBALS['KH_CONFIG'];
     foreach (explode('.', $key) as $part) {
         if (!is_array($value) || !array_key_exists($part, $value)) {
             return $default;
@@ -78,9 +78,9 @@ function rows(string $sql, array $params = []): array
 
 function today(): DateTimeImmutable
 {
-    // ZW_TODAY maakt testen met een andere datum mogelijk (alleen in debug)
-    if (cfg('debug') && getenv('ZW_TODAY')) {
-        return new DateTimeImmutable(getenv('ZW_TODAY'));
+    // KH_TODAY maakt testen met een andere datum mogelijk (alleen in debug)
+    if (cfg('debug') && getenv('KH_TODAY')) {
+        return new DateTimeImmutable(getenv('KH_TODAY'));
     }
     return new DateTimeImmutable('today');
 }
@@ -92,7 +92,7 @@ function log_msg(string $level, string $message, array $context = []): void
             $level, mb_substr($message, 0, 500), $context ? json_encode($context, JSON_UNESCAPED_UNICODE) : null,
         ]);
     } catch (Throwable $e) {
-        error_log('[zwartwerk] ' . $message);
+        error_log('[khoffie] ' . $message);
     }
 }
 

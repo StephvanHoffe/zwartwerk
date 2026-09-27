@@ -6,7 +6,7 @@ require __DIR__ . '/../app/bootstrap.php';
 
 header('X-Frame-Options: DENY');
 header('Referrer-Policy: same-origin');
-start_session('zw_admin');
+start_session('kh_admin');
 
 set_exception_handler(function (Throwable $e) {
     log_msg('error', 'Beheer: ' . $e->getMessage(), ['file' => $e->getFile() . ':' . $e->getLine()]);

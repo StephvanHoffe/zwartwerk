@@ -39,7 +39,7 @@
       donker: "Donker"
     },
     pay: "iDEAL | Wero",
-    email: "info@zwartwerkkoffie.nl",
+    email: "info@khoffie.nl",
     welcomeDiscount: 0.25, // 25% korting op de eerste levering
     referralDiscount: 0.5 // 50% korting op de eerste levering met een uitnodigingscode
   };
@@ -140,8 +140,8 @@
       try { localStorage.removeItem(k); } catch (e) { /* negeren */ }
     }
   };
-  var ACCOUNTS = "zw_accounts";
-  var SESSION = "zw_session";
+  var ACCOUNTS = "kh_accounts";
+  var SESSION = "kh_session";
   function getAccounts() { return store.get(ACCOUNTS, {}); }
   function saveAccount(acc) {
     var all = getAccounts();
@@ -698,7 +698,7 @@
     });
     return {
       name: "Sam de Vries",
-      email: "demo@zwartwerk.nl",
+      email: "demo@khoffie.nl",
       password: "koffie",
       phone: "06 12345678",
       address: { street: "Voorbeeldstraat", nr: "12", postcode: "3741 AB", city: "Baarn" },
@@ -768,7 +768,7 @@
         return;
       }
       var acc = getAccounts()[email];
-      if (email === "demo@zwartwerk.nl" && !acc) { acc = makeDemoAccount(); saveAccount(acc); }
+      if (email === "demo@khoffie.nl" && !acc) { acc = makeDemoAccount(); saveAccount(acc); }
       if (!acc || acc.password !== f.elements.password.value) {
         msg.textContent = "Dat e-mailadres en wachtwoord kennen we niet samen. Probeer het nog eens.";
         return;

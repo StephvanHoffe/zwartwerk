@@ -14,7 +14,7 @@ set_exception_handler(function (Throwable $e) {
 
 function customer_id(): ?int
 {
-    start_session('zw_sess');
+    start_session('kh_sess');
     return isset($_SESSION['uid']) ? (int) $_SESSION['uid'] : null;
 }
 
@@ -29,7 +29,7 @@ function require_customer(): int
 
 function login_customer(int $id): void
 {
-    start_session('zw_sess');
+    start_session('kh_sess');
     session_regenerate_id(true);
     $_SESSION['uid'] = $id;
 }

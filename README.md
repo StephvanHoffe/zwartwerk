@@ -78,7 +78,7 @@ install.php           eenmalige installatie
 cp app/config.example.php app/config.php   # vul een lokale MySQL-database in, zet debug op true
 php -S localhost:8000                      # open http://localhost:8000/install.php
 php cron/run.php                           # cronjob handmatig draaien
-ZW_TODAY=2026-11-01 php cron/run.php       # (alleen met debug) doen alsof het een andere datum is
+KH_TODAY=2026-11-01 php cron/run.php       # (alleen met debug) doen alsof het een andere datum is
 ```
 
 Header en footer staan in elke pagina. Pas je die aan, doe dat dan in alle `.html`-bestanden.

@@ -1,7 +1,7 @@
 <?php
 /*
  * Alternatief voor hosts waar een cronjob alleen een URL kan aanroepen:
- *   https://www.zwartwerkkoffie.nl/api/cron.php?token=JOUW_CRON_TOKEN
+ *   https://www.khoffie.nl/api/cron.php?token=JOUW_CRON_TOKEN
  */
 declare(strict_types=1);
 require __DIR__ . '/../app/bootstrap.php';

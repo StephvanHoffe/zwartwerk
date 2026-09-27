@@ -2,7 +2,7 @@
 /*
  * Cronjob: zet leveringen vast (7 dagen van tevoren), schrijft af en hervat pauzes.
  * Instellen in DirectAdmin → Geavanceerd → Cronjobs, bijvoorbeeld elk uur:
- *   php /home/GEBRUIKER/domains/zwartwerkkoffie.nl/public_html/cron/run.php
+ *   php /home/GEBRUIKER/domains/khoffie.nl/public_html/cron/run.php
  */
 declare(strict_types=1);
 

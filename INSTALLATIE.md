@@ -8,19 +8,19 @@ Deze handleiding zet de website, het klantaccount, de betalingen (Mollie) en het
 
 1. Log in op DirectAdmin.
 2. **PHP-versie selecteren** (of "Select PHP version"): kies **8.1 of hoger** (8.3 is prima).
-3. **SSL-certificaten** → vink **Let's Encrypt** aan voor `zwartwerkkoffie.nl` en `www.zwartwerkkoffie.nl` en sla op.
+3. **SSL-certificaten** → vink **Let's Encrypt** aan voor `khoffie.nl` en `www.khoffie.nl` en sla op.
    Zet daarna "Forceer SSL" / "Force SSL with https redirect" aan, als je die optie ziet.
 
 ## 2. Database aanmaken
 
 1. DirectAdmin → **MySQL-beheer** → **Nieuwe database**.
-2. Kies een naam (bijv. `zwartwerk`) en laat een sterk wachtwoord genereren.
-3. Noteer: **databasenaam**, **gebruikersnaam** en **wachtwoord**. DirectAdmin zet vaak je gebruikersnaam ervoor, bijvoorbeeld `jouwnaam_zwartwerk`.
+2. Kies een naam (bijv. `khoffie`) en laat een sterk wachtwoord genereren.
+3. Noteer: **databasenaam**, **gebruikersnaam** en **wachtwoord**. DirectAdmin zet vaak je gebruikersnaam ervoor, bijvoorbeeld `jouwnaam_khoffie`.
 
 ## 3. Bestanden uploaden
 
 1. Download de code van GitHub als ZIP: groene knop **Code** → **Download ZIP**, van de branch met deze website.
-2. DirectAdmin → **Bestandsbeheer** → `domains/zwartwerkkoffie.nl/public_html`.
+2. DirectAdmin → **Bestandsbeheer** → `domains/khoffie.nl/public_html`.
 3. Verwijder de standaardbestanden die Vimexx daar neerzet, zoals `index.html` of `default.html`.
 4. Upload de ZIP en pak hem uit (rechtermuisknop → **Uitpakken**). Zorg dat `index.html`, `install.php` en de mappen `api`, `app`, `assets`, `beheer`, `cron` en `database` **direct** in `public_html` staan, niet in een submap.
 
@@ -29,7 +29,7 @@ Deze handleiding zet de website, het klantaccount, de betalingen (Mollie) en het
 1. Ga in Bestandsbeheer naar `public_html/app`.
 2. Kopieer `config.example.php` en noem de kopie `config.php`.
 3. Open `config.php` (bewerken) en vul in:
-   - `base_url` → `https://www.zwartwerkkoffie.nl` (zonder `/` aan het eind)
+   - `base_url` → `https://www.khoffie.nl` (zonder `/` aan het eind)
    - `db` → de gegevens uit stap 2
    - `mollie.api_key` → je **test**-sleutel (begint met `test_`), zie stap 7
    - `sendcloud.public_key` en `secret_key` → zie stap 8 (mag later)
@@ -39,11 +39,11 @@ Deze handleiding zet de website, het klantaccount, de betalingen (Mollie) en het
 
 ## 5. Installeren en je beheeraccount aanmaken
 
-1. Ga naar **https://www.zwartwerkkoffie.nl/install.php**.
+1. Ga naar **https://www.khoffie.nl/install.php**.
 2. Alle controles moeten op **OK** staan. Staat de database op "Ontbreekt"? Controleer dan de gegevens in `config.php`.
 3. Vul je naam, e-mailadres en een wachtwoord (minimaal 10 tekens) in en klik **Installeren**.
 4. **Verwijder daarna `install.php`** via Bestandsbeheer. Hij werkt sowieso niet meer als er al een beheerder is, maar opruimen is netter.
-5. Inloggen op het beheer: **https://www.zwartwerkkoffie.nl/beheer/**
+5. Inloggen op het beheer: **https://www.khoffie.nl/beheer/**
 
 ## 6. Cronjob instellen (belangrijk!)
 
@@ -53,13 +53,13 @@ De cronjob zet elke levering 7 dagen van tevoren vast, schrijft dan af en laat p
 2. Nieuwe cronjob: minuut `15`, uur `*`, dag `*`, maand `*`, weekdag `*` (= elk uur).
 3. Commando (vervang `GEBRUIKER` door je DirectAdmin-gebruikersnaam):
    ```
-   /usr/local/bin/php /home/GEBRUIKER/domains/zwartwerkkoffie.nl/public_html/cron/run.php > /dev/null 2>&1
+   /usr/local/bin/php /home/GEBRUIKER/domains/khoffie.nl/public_html/cron/run.php > /dev/null 2>&1
    ```
    Het precieze pad staat ook in het beheer onder **Instellingen**.
 4. Na een uur zie je in het beheer bij **Instellingen → Koppelingen** "Cronjob: laatst gedraaid …".
 
 *Werkt het commando niet? Dan kan de cronjob ook een URL aanroepen:*
-`wget -q -O /dev/null "https://www.zwartwerkkoffie.nl/api/cron.php?token=JOUW_CRON_TOKEN"`
+`wget -q -O /dev/null "https://www.khoffie.nl/api/cron.php?token=JOUW_CRON_TOKEN"`
 
 ## 7. Mollie
 
@@ -76,7 +76,7 @@ De cronjob zet elke levering 7 dagen van tevoren vast, schrijft dan af en laat p
 ## 8. Sendcloud
 
 1. Sendcloud → **Instellingen → Integraties** → zoek **Sendcloud API** → **Verbinden**. Geef het een naam, bijv. "Khoffie website".
-2. Vink **Webhook** aan en vul in: `https://www.zwartwerkkoffie.nl/api/sendcloud-webhook.php`
+2. Vink **Webhook** aan en vul in: `https://www.khoffie.nl/api/sendcloud-webhook.php`
 3. Kopieer de **Public key** en **Secret key** naar `config.php`.
 4. Controleer bij **Instellingen → Afzenderadressen** dat je afzenderadres (Baarn) klopt.
 5. Optioneel: wil je dat labels meteen worden gemaakt met je brievenbuspakje-methode? Zet dan het ID van die verzendmethode bij `shipping_method_id`. Laat je het leeg, dan komen de zendingen in Sendcloud klaar te staan en kies je daar zelf de methode en print je de labels.
@@ -86,7 +86,7 @@ Standaard wordt elke zak van 250 gram een eigen brievenbuspakje (500 gram = 2 pa
 
 ## 9. E-mail
 
-1. DirectAdmin → **E-mailbeheer**: maak het account `info@zwartwerkkoffie.nl` aan, als dat er nog niet is.
+1. DirectAdmin → **E-mailbeheer**: maak het account `info@khoffie.nl` aan, als dat er nog niet is.
 2. Controleer bij **DNS-beheer** dat er SPF- en DKIM-records zijn. DirectAdmin zet die meestal automatisch; zonder deze records komen mails vaker in de spam terecht.
 3. Test: vraag op de website via "Wachtwoord vergeten?" een resetlink aan voor je testaccount. In het beheer → **Instellingen** zie je alle verstuurde mails.
 

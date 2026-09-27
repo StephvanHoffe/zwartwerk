@@ -94,7 +94,7 @@ layout_start('Instellingen', 'instellingen');
     <h3>Adressen om in te stellen</h3>
     <p class="small">Sendcloud-webhook (Instellingen → Integraties → jouw API-integratie → Webhook):<br><code><?= e($base) ?>/api/sendcloud-webhook.php</code></p>
     <p class="small">Mollie-webhook: wordt automatisch meegestuurd, niets instellen.<br><code><?= e($base) ?>/api/mollie-webhook.php</code></p>
-    <p class="small">Cronjob (DirectAdmin → Cronjobs, elk uur):<br><code>php <?= e(ZW_ROOT) ?>/cron/run.php</code></p>
+    <p class="small">Cronjob (DirectAdmin → Cronjobs, elk uur):<br><code>php <?= e(KH_ROOT) ?>/cron/run.php</code></p>
     <p class="small"><a href="instellingen.php?export=nieuwsbrief">Nieuwsbrief-adressen exporteren (CSV)</a></p>
   </div>
 </div>

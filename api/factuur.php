@@ -24,11 +24,11 @@ if (!$allowed) {
 function start_admin_session_readonly(): void
 {
     // Eerst de klantsessie loslaten, anders leest PHP die opnieuw in plaats van de beheersessie
-    $id = (string) ($_COOKIE['zw_admin'] ?? '');
+    $id = (string) ($_COOKIE['kh_admin'] ?? '');
     if (!preg_match('/^[A-Za-z0-9,-]{16,128}$/', $id)) {
         return;
     }
-    session_name('zw_admin');
+    session_name('kh_admin');
     session_id($id);
     session_start(['read_and_close' => true]);
 }

@@ -7,13 +7,13 @@
  */
 return [
     // Volledige adres van de website, zonder / aan het eind
-    'base_url' => 'https://www.zwartwerkkoffie.nl',
+    'base_url' => 'https://www.khoffie.nl',
 
     // Database (DirectAdmin → MySQL-beheer)
     'db' => [
         'host' => 'localhost',
-        'name' => 'gebruiker_zwartwerk',
-        'user' => 'gebruiker_zwartwerk',
+        'name' => 'gebruiker_khoffie',
+        'user' => 'gebruiker_khoffie',
         'pass' => 'wachtwoord',
     ],
 
@@ -39,9 +39,9 @@ return [
 
     // E-mail
     'mail' => [
-        'from' => 'info@zwartwerkkoffie.nl',
+        'from' => 'info@khoffie.nl',
         'from_name' => 'Khoffie',
-        'admin_to' => 'info@zwartwerkkoffie.nl', // melding bij nieuwe abonnees en mislukte betalingen
+        'admin_to' => 'info@khoffie.nl', // melding bij nieuwe abonnees en mislukte betalingen
         'enabled' => true,                        // false = mails alleen loggen (om te testen)
     ],
 

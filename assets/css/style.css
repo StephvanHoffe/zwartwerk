@@ -281,12 +281,8 @@ p { margin: 0 0 1em; }
   background: var(--orange); border-radius: 50%; z-index: -1;
 }
 .hero-visual .bag {
-  border-radius: 34px;
-  box-shadow: var(--shadow);
-  aspect-ratio: 645 / 1007;
-  object-fit: cover;
   width: 100%;
-  border: 6px solid var(--white);
+  filter: drop-shadow(0 22px 30px rgba(20, 46, 122, 0.22));
 }
 .hero-visual .note {
   position: absolute; left: -64px; bottom: -4%;
@@ -420,7 +416,7 @@ p { margin: 0 0 1em; }
   content: ""; position: absolute; width: 70%; aspect-ratio: 1; right: -12%; top: -6%;
   background: var(--pink); border-radius: 50%; z-index: 0;
 }
-.label-visual img { border-radius: 34px; box-shadow: var(--shadow); border: 6px solid var(--white); position: relative; z-index: 1; }
+.label-visual img { position: relative; z-index: 1; filter: drop-shadow(0 22px 30px rgba(20, 46, 122, 0.22)); }
 .label-points { list-style: none; padding: 0; margin: 0; display: grid; gap: 22px; counter-reset: lp; }
 .label-points li { display: grid; grid-template-columns: 46px 1fr; gap: 16px; }
 .label-points li::before {

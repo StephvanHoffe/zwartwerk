@@ -1,0 +1,10 @@
+# Khoffie — instructies voor zoekmachines
+User-agent: *
+Disallow: /beheer/
+Disallow: /api/
+Disallow: /app/
+Disallow: /cron/
+Disallow: /database/
+Disallow: /install.php
+
+Sitemap: https://www.khoffie.nl/sitemap.xml

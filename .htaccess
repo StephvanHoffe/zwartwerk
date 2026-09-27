@@ -17,9 +17,43 @@ RedirectMatch 404 /\.(git|github|claude)(/|$)
   Header always set X-Frame-Options "SAMEORIGIN"
 </IfModule>
 
-# Altijd via https (zet eerst SSL aan in DirectAdmin, haal dan de # weg)
-# <IfModule mod_rewrite.c>
-#   RewriteEngine On
-#   RewriteCond %{HTTPS} !=on
-#   RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
-# </IfModule>
+# Nette 404-pagina voor adressen die niet bestaan
+ErrorDocument 404 /404.html
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+
+  # Eén vast adres voor zoekmachines: altijd https://www.khoffie.nl
+  # (Let's Encrypt-controles op /.well-known blijven bereikbaar)
+  RewriteCond %{REQUEST_URI} !^/\.well-known/
+  RewriteCond %{HTTP_HOST} ^khoffie\.nl$ [NC,OR]
+  RewriteCond %{HTTPS} !=on
+  RewriteCond %{HTTP_HOST} ^(www\.)?khoffie\.nl$ [NC]
+  RewriteRule ^ https://www.khoffie.nl%{REQUEST_URI} [L,R=301]
+
+  # /index.html is dezelfde pagina als / : doorsturen naar /
+  RewriteCond %{THE_REQUEST} \s/index\.html[\s?]
+  RewriteRule ^index\.html$ / [L,R=301]
+</IfModule>
+
+# Sneller laden: tekstbestanden comprimeren
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html text/css application/javascript text/javascript application/json image/svg+xml text/xml application/xml text/plain
+</IfModule>
+
+# Sneller laden: afbeeldingen, lettertypes, opmaak en scripts in de browser bewaren.
+# Pagina's zelf niet, zodat wijzigingen direct zichtbaar zijn.
+<IfModule mod_expires.c>
+  ExpiresActive On
+  ExpiresDefault "access plus 1 hour"
+  ExpiresByType text/html "access plus 0 seconds"
+  ExpiresByType application/json "access plus 0 seconds"
+  ExpiresByType text/css "access plus 1 month"
+  ExpiresByType application/javascript "access plus 1 month"
+  ExpiresByType text/javascript "access plus 1 month"
+  ExpiresByType image/webp "access plus 1 month"
+  ExpiresByType image/jpeg "access plus 1 month"
+  ExpiresByType image/png "access plus 1 month"
+  ExpiresByType image/svg+xml "access plus 1 month"
+  ExpiresByType font/woff2 "access plus 1 year"
+</IfModule>

@@ -3,18 +3,113 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Khoffie — Koffie uit kleine oplage, elke maand een verrassing</title>
-  <meta name="description" content="Het koffieabonnement van Khoffie: elke maand een nieuwe smaak, vers gebrand van kleinschalige boeren. Past door je brievenbus. Vanaf € 16 inclusief verzending, maandelijks opzegbaar.">
+  <title>Koffieabonnement met vers gebrande bonen | Khoffie</title>
+  <meta name="description" content="Koffieabonnement met elke maand een nieuwe smaak: vers gebrande koffiebonen van kleine boeren, door je brievenbus. Vanaf € 16 incl. verzending.">
+  <link rel="canonical" href="https://www.khoffie.nl/">
   <meta name="theme-color" content="#1a3c9e">
-  <meta property="og:title" content="Khoffie — Koffie uit kleine oplage">
-  <meta property="og:description" content="Elke maand andere bonen. Altijd vers gebrand. Nooit twee keer dezelfde.">
-  <meta property="og:image" content="assets/img/khoffie-zakken.jpg">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Khoffie">
+  <meta property="og:locale" content="nl_NL">
+  <meta property="og:url" content="https://www.khoffie.nl/">
+  <meta property="og:title" content="Koffieabonnement met vers gebrande bonen — Khoffie">
+  <meta property="og:description" content="Koffieabonnement met elke maand een nieuwe smaak: vers gebrande koffiebonen van kleine boeren, door je brievenbus. Vanaf € 16 incl. verzending.">
+  <meta property="og:image" content="https://www.khoffie.nl/assets/img/khoffie-zakken.jpg">
+  <meta property="og:image:width" content="1536">
+  <meta property="og:image:height" content="1024">
+  <meta property="og:image:alt" content="Voor- en achterkant van de kleurrijke Khoffie-koffiezak">
+  <meta name="twitter:card" content="summary_large_image">
   <link rel="icon" type="image/svg+xml" href="assets/img/favicon.svg">
   <link rel="alternate icon" type="image/png" href="assets/img/favicon.png">
   <link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png">
   <link rel="preload" href="assets/fonts/fredoka.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="assets/css/fonts.css">
   <link rel="stylesheet" href="assets/css/style.css?v=2">
+  <script type="application/ld+json">
+{
+ "@context": "https://schema.org",
+ "@graph": [
+  {
+   "@type": "Organization",
+   "@id": "https://www.khoffie.nl/#organisatie",
+   "name": "Khoffie",
+   "url": "https://www.khoffie.nl/",
+   "logo": "https://www.khoffie.nl/assets/img/apple-touch-icon.png",
+   "email": "info@khoffie.nl",
+   "slogan": "Koffie uit kleine oplage",
+   "address": {
+    "@type": "PostalAddress",
+    "streetAddress": "De Savornin Lohmanlaan 7",
+    "postalCode": "3741 TW",
+    "addressLocality": "Baarn",
+    "addressCountry": "NL"
+   },
+   "vatID": "NL004738412B27",
+   "taxID": "89513908"
+  },
+  {
+   "@type": "WebSite",
+   "@id": "https://www.khoffie.nl/#website",
+   "url": "https://www.khoffie.nl/",
+   "name": "Khoffie",
+   "inLanguage": "nl-NL",
+   "publisher": {
+    "@id": "https://www.khoffie.nl/#organisatie"
+   }
+  },
+  {
+   "@type": "Product",
+   "name": "Khoffie koffieabonnement",
+   "brand": {
+    "@id": "https://www.khoffie.nl/#organisatie"
+   },
+   "description": "Koffieabonnement met elke maand een nieuwe smaak vers gebrande hele koffiebonen van kleinschalige boeren, in zakken van 250 gram die door de brievenbus passen.",
+   "image": "https://www.khoffie.nl/assets/img/khoffie-zakken.jpg",
+   "offers": [
+    {
+     "@type": "Offer",
+     "name": "250 gram per levering",
+     "price": "16.00",
+     "priceCurrency": "EUR",
+     "availability": "https://schema.org/InStock",
+     "url": "https://www.khoffie.nl/#abonnement",
+     "shippingDetails": {
+      "@type": "OfferShippingDetails",
+      "shippingRate": {
+       "@type": "MonetaryAmount",
+       "value": "0",
+       "currency": "EUR"
+      },
+      "shippingDestination": {
+       "@type": "DefinedRegion",
+       "addressCountry": "NL"
+      }
+     }
+    },
+    {
+     "@type": "Offer",
+     "name": "500 gram per levering (2 zakken)",
+     "price": "29.00",
+     "priceCurrency": "EUR",
+     "availability": "https://schema.org/InStock",
+     "url": "https://www.khoffie.nl/#abonnement",
+     "shippingDetails": {
+      "@type": "OfferShippingDetails",
+      "shippingRate": {
+       "@type": "MonetaryAmount",
+       "value": "0",
+       "currency": "EUR"
+      },
+      "shippingDestination": {
+       "@type": "DefinedRegion",
+       "addressCountry": "NL"
+      }
+     }
+    }
+   ]
+  }
+ ]
+}
+  </script>
 </head>
 <body>
   <a class="visually-hidden" href="#main">Naar de inhoud</a>
@@ -65,7 +160,7 @@
           </ul>
         </div>
         <div class="hero-visual">
-          <img class="bag" src="assets/img/khoffie-zak-voorkant.webp?v=2" alt="Khoffie koffiezak: koffie uit kleine oplage" width="602" height="965">
+          <img class="bag" fetchpriority="high" src="assets/img/khoffie-zak-voorkant.webp?v=2" alt="Khoffie koffiezak: koffie uit kleine oplage" width="602" height="965">
           <div class="note">
             <span class="note-kicker"><span class="pulse" aria-hidden="true"></span>Deze maand</span>
             <span class="note-title">Top secret.</span>
@@ -441,6 +536,6 @@
     </div>
   </footer>
 
-  <script src="assets/js/main.js"></script>
+  <script src="assets/js/main.js?v=2"></script>
 </body>
 </html>

@@ -280,10 +280,44 @@ p { margin: 0 0 1em; }
   content: ""; position: absolute; width: 46%; aspect-ratio: 1; right: -16%; bottom: 10%;
   background: var(--orange); border-radius: 50%; z-index: -1;
 }
-.hero-visual .bag {
-  width: 100%;
-  filter: drop-shadow(0 22px 30px rgba(20, 46, 122, 0.22));
+/* Draaiende koffiezak: voor- en achterkant met smalle zijkanten (zijvouw) in 3D */
+.bag3d {
+  --depth: 16cqw;               /* dikte van de zak */
+  position: relative;
+  container-type: inline-size;
+  perspective: 1400px;
 }
+.bag3d::after {                 /* schaduw op de grond */
+  content: ""; position: absolute; left: 14%; right: 14%; bottom: -3%; height: 7%;
+  background: radial-gradient(closest-side, rgba(20, 46, 122, 0.32), transparent);
+  border-radius: 50%; z-index: -1;
+  animation: bag3d-shadow 16s linear infinite;
+}
+.bag3d__spin {
+  position: relative;
+  transform-style: preserve-3d;
+  animation: bag3d-spin 16s linear infinite;
+}
+.bag3d:hover .bag3d__spin, .bag3d:hover::after { animation-play-state: paused; }
+.bag3d__face { display: block; width: 100%; backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+.bag3d__front { position: relative; transform: translateZ(calc(var(--depth) / 2)); }
+.bag3d__back { position: absolute; inset: 0; height: 100%; object-fit: fill; transform: rotateY(180deg) translateZ(calc(var(--depth) / 2)); }
+.bag3d__side {
+  position: absolute; top: 3.5%; bottom: 1%; left: 50%;
+  width: var(--depth); margin-left: calc(var(--depth) / -2);
+  backface-visibility: hidden; -webkit-backface-visibility: hidden;
+  border-radius: 4px;
+}
+.bag3d__side--l {
+  background: linear-gradient(90deg, rgba(20, 30, 70, 0.28), rgba(20, 30, 70, 0.08)), linear-gradient(180deg, #0a399c 0.0%, #1844a9 2.1%, #1645a9 4.2%, #1842a8 6.2%, #1c45a7 8.3%, #284eb5 10.4%, #2853bc 12.5%, #2951b9 14.6%, #365cc4 16.7%, #f6e7d8 18.8%, #f8eadc 20.8%, #f6e6d7 22.9%, #f0e1cf 25.0%, #ebd9c8 27.1%, #e4d3c0 29.2%, #e4d2bf 31.2%, #e3d0bb 33.3%, #e2cebc 35.4%, #decbb6 37.5%, #dcc8b3 39.6%, #dcc8b3 41.7%, #df541d 43.8%, #e0541f 45.8%, #de5320 47.9%, #db5120 50.0%, #df5625 52.1%, #e05725 54.2%, #dd5421 56.2%, #dd5523 58.3%, #db5422 60.4%, #d74f19 62.5%, #dd6060 64.6%, #df6163 66.7%, #da5d5d 68.8%, #dc605f 70.8%, #dc5e5e 72.9%, #db5e5d 75.0%, #db5f5b 77.1%, #dc5f5e 79.2%, #de6361 81.2%, #dc625f 83.3%, #dd6560 85.4%, #e36c66 87.5%, #e16a64 89.6%, #e06d66 91.7%, #e17069 93.8%, #e87b76 95.8%, #f8aaa2 97.9%, #fa8a87 100.0%);
+  transform: rotateY(-90deg) translateZ(calc(50cqw - 2.5cqw));
+}
+.bag3d__side--r {
+  background: linear-gradient(90deg, rgba(20, 30, 70, 0.08), rgba(20, 30, 70, 0.3)), linear-gradient(180deg, #e29b07 0.0%, #e59e09 2.1%, #e8a30c 4.2%, #f1ad17 6.2%, #e96857 8.3%, #dc5b52 10.4%, #e15c58 12.5%, #f16f6d 14.6%, #d95b55 16.7%, #d85c56 18.8%, #d85c56 20.8%, #de615c 22.9%, #da5e58 25.0%, #d75b55 27.1%, #d15651 29.2%, #c8ae94 31.2%, #c5ab92 33.3%, #c7ae95 35.4%, #c4ab92 37.5%, #c4a78c 39.6%, #c4a88e 41.7%, #c2a88f 43.8%, #c3a98f 45.8%, #c4a991 47.9%, #c4aa92 50.0%, #c48f7b 52.1%, #ca4c4e 54.2%, #cc4c4d 56.2%, #cb4c4e 58.3%, #d15556 60.4%, #ce5e5b 62.5%, #c3a68c 64.6%, #c7ac95 66.7%, #c5ab92 68.8%, #c7ad96 70.8%, #d59009 72.9%, #df990f 75.0%, #d99512 77.1%, #02297d 79.2%, #012474 81.2%, #012473 83.3%, #022677 85.4%, #012473 87.5%, #02236f 89.6%, #022475 91.7%, #001f6e 93.8%, #012172 95.8%, #02277a 97.9%, #013296 100.0%);
+  transform: rotateY(90deg) translateZ(calc(50cqw - 2.5cqw));
+}
+@keyframes bag3d-spin { from { transform: rotateY(0deg); } to { transform: rotateY(360deg); } }
+@keyframes bag3d-shadow { 0%, 50%, 100% { transform: scaleX(1); } 25%, 75% { transform: scaleX(0.45); } }
 .hero-visual .note {
   position: absolute; left: -64px; bottom: -4%;
   background: var(--yellow); color: var(--navy);

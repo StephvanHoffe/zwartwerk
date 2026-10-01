@@ -35,6 +35,17 @@ function init(THREE) {
   const SEAL = 0.9;          // vanaf hier (van onder gemeten) is de zak plat dichtgeseald
   const NX = 72, NY = 110;
 
+  // Per hoogte (41 stappen, van onder naar boven) waar de zak in de foto begint en eindigt.
+  // Zo valt de foto precies op het model en zijn er geen doorzichtige randen aan de zijkant.
+  const EDGES = {
+    front: [[0.0242, 0.9892], [0.0242, 0.9892], [0.0108, 0.9842], [0.0192, 0.9825], [0.0142, 0.9842], [0.0125, 0.9842], [0.0125, 0.9842], [0.0108, 0.9842], [0.0125, 0.9825], [0.0125, 0.9825], [0.0125, 0.9825], [0.0125, 0.9825], [0.0125, 0.9825], [0.0142, 0.9825], [0.0142, 0.9825], [0.0142, 0.9825], [0.0142, 0.9825], [0.0142, 0.9825], [0.0158, 0.9842], [0.0158, 0.9842], [0.0158, 0.9858], [0.0158, 0.9858], [0.0175, 0.9858], [0.0192, 0.9875], [0.0208, 0.9875], [0.0225, 0.9875], [0.0258, 0.9875], [0.0308, 0.9875], [0.0342, 0.9875], [0.0392, 0.9875], [0.0442, 0.9875], [0.0475, 0.9858], [0.0508, 0.9842], [0.0542, 0.9842], [0.0575, 0.9825], [0.0608, 0.9825], [0.0625, 0.9825], [0.0658, 0.9808], [0.0675, 0.9792], [0.0675, 0.9792], [0.0675, 0.9792]],
+    back: [[0.0108, 0.9661], [0.0108, 0.9661], [0.0108, 0.9826], [0.0124, 0.9776], [0.0141, 0.9843], [0.0141, 0.9859], [0.0157, 0.9876], [0.0157, 0.9892], [0.0157, 0.9892], [0.0157, 0.9892], [0.0157, 0.9892], [0.0157, 0.9892], [0.0157, 0.9892], [0.0174, 0.9892], [0.0174, 0.9892], [0.0174, 0.9892], [0.0174, 0.9892], [0.0174, 0.9892], [0.0174, 0.9892], [0.0174, 0.9876], [0.0174, 0.9876], [0.0174, 0.9876], [0.0174, 0.9876], [0.0174, 0.9859], [0.0174, 0.9826], [0.0174, 0.9793], [0.019, 0.976], [0.019, 0.971], [0.0207, 0.9677], [0.0207, 0.9627], [0.0224, 0.9578], [0.024, 0.9528], [0.024, 0.9495], [0.024, 0.9445], [0.024, 0.9412], [0.024, 0.9396], [0.024, 0.9379], [0.0257, 0.9346], [0.0257, 0.9329], [0.0257, 0.9329], [0.0257, 0.9329]]
+  };
+  const edgeAt = (list, v) => {
+    const f = v * (list.length - 1), i = Math.min(list.length - 2, Math.floor(f)), t = f - i;
+    return [list[i][0] + (list[i + 1][0] - list[i][0]) * t, list[i][1] + (list[i + 1][1] - list[i][1]) * t];
+  };
+
   const ease = (t) => t * t * (3 - 2 * t);
   // dikte over de hoogte: dik onderin, loopt rustig af naar de seal bovenin
   const thick = (v) => {
@@ -45,7 +56,7 @@ function init(THREE) {
   // bolling over de breedte: 0 bij de zijnaden, vol in het midden
   const bulge = (u) => Math.pow(Math.max(0, 1 - Math.pow(Math.abs(2 * u - 1), 2.6)), 0.55);
 
-  function surface(sign, mirror) {
+  function surface(sign, mirror, edges) {
     const g = new THREE.BufferGeometry();
     const pos = [], uv = [], idx = [];
     for (let j = 0; j <= NY; j++) {
@@ -54,10 +65,13 @@ function init(THREE) {
         const u = i / NX;
         const x = (u - 0.5) * W;
         const y = (v - 0.5) * H;
-        // 0.004: voor- en achterkant raken elkaar net niet, anders flikkeren de naden
-        const z = sign * (0.004 + 0.5 * thick(v) * bulge(u));
+        // Voor- en achterkant komen samen in een gesloten zijnaad; daarbinnen liggen ze
+        // minstens 0,004 uit elkaar, zodat de dichte seal bovenin niet flikkert.
+        const seam = Math.min(1, Math.min(u, 1 - u) * NX);
+        const z = sign * (0.004 * seam + 0.5 * thick(v) * bulge(u));
         pos.push(mirror ? -x : x, y, z);
-        uv.push(u, v);
+        const [l, r] = edgeAt(edges, v);
+        uv.push(l + u * (r - l), v);
       }
     }
     for (let j = 0; j < NY; j++) {
@@ -108,8 +122,8 @@ function init(THREE) {
   const frontSrc = img.currentSrc || img.src;
   const backSrc = holder.getAttribute("data-back");
   const mat = (map) => new THREE.MeshStandardMaterial({ map, alphaTest: 0.5, roughness: 0.62, metalness: 0, side: THREE.DoubleSide });
-  const front = new THREE.Mesh(surface(1, false), mat(tex(frontSrc)));
-  const back = new THREE.Mesh(surface(-1, true), mat(tex(backSrc)));
+  const front = new THREE.Mesh(surface(1, false, EDGES.front), mat(tex(frontSrc)));
+  const back = new THREE.Mesh(surface(-1, true, EDGES.back), mat(tex(backSrc)));
   const base = new THREE.Mesh(bottom(), new THREE.MeshStandardMaterial({ color: 0x24409a, roughness: 0.7, side: THREE.DoubleSide }));
   bag.add(front, back, base);
 
@@ -175,6 +189,8 @@ function init(THREE) {
   if ("IntersectionObserver" in window) {
     new IntersectionObserver((es) => { visible = es[0].isIntersecting; }).observe(holder);
   }
+  // vaste hoek instellen (handig om te testen): document.querySelector("[data-zak3d]").zakHoek(1.57)
+  holder.zakHoek = (rad) => { angle = rad; hover = true; draw(true); };
   window.addEventListener("resize", resize);
   resize();
   requestAnimationFrame(tick);
